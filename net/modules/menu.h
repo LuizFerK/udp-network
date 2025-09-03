@@ -1,3 +1,3 @@
 #include "../defs.h"
 
-void menu(Router router);
+void menu(Config* config);

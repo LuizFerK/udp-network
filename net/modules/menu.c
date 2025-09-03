@@ -2,10 +2,10 @@
 #include "../helpers.h"
 #include "menu.h"
 
-void send_message(Router router) {
+void send_message(Config* config) {
   Message message;
   message.type = 1;
-  message.source = router.id;
+  message.source = config->router.id;
 
   printf("\nEnter destination router: ");
   get_int_option(&message.destination);
@@ -15,12 +15,7 @@ void send_message(Router router) {
     return;
   }
 
-  if (router.id == message.destination) {
-    printf("\nSource and destination cannot be the same.\n");
-    return;
-  }
-
-  if (router.links[message.destination].router == NULL) {
+  if (config->router.id != message.destination && config->links[message.destination].router == NULL) {
     printf("\nNo link to Router %d.\n", message.destination);
     return;
   }
@@ -32,8 +27,25 @@ void send_message(Router router) {
   printf("Message: %s\n", message.payload);
 }
 
+void cleanup(Config* config) {
+  pthread_cancel(config->sender.thread_id);
+  pthread_cancel(config->receiver.thread_id);
+  pthread_cancel(config->packetHandler.thread_id);
+  
+  pthread_join(config->sender.thread_id, NULL);
+  pthread_join(config->receiver.thread_id, NULL);
+  pthread_join(config->packetHandler.thread_id, NULL);
+  
+  pthread_mutex_destroy(&config->sender.mutex);
+  pthread_mutex_destroy(&config->receiver.mutex);
+  pthread_mutex_destroy(&config->packetHandler.mutex);
+  
+  sem_destroy(&config->sender.semaphore);
+  sem_destroy(&config->receiver.semaphore);
+  sem_destroy(&config->packetHandler.semaphore);
+}
 
-void menu(Router router) {
+void menu(Config* config) {
   int menu_opt = -1;
   while (menu_opt != 2) {
     if (menu_opt != -1 && menu_opt != 1) {
@@ -41,7 +53,7 @@ void menu(Router router) {
     }
 
     if (menu_opt == 1) {
-      send_message(router);
+      send_message(config);
     }
 
     printf("\nMenu:\n");
@@ -54,4 +66,6 @@ void menu(Router router) {
       printf("\nInvalid option.\n");
     }
   }
+
+  cleanup(config);
 }

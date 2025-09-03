@@ -1,3 +1,3 @@
 #include "defs.h"
 
-Router setup(int id);
+Config setup(int id);
