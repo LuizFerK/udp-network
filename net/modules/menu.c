@@ -3,32 +3,33 @@
 #include "menu.h"
 
 void send_message(Router router) {
-  int destination;
-  char message[MESSAGE_CHAR_LIMIT];
+  Message message;
+  message.type = 1;
+  message.source = router.id;
 
   printf("\nEnter destination router: ");
-  get_int_option(&destination);
+  get_int_option(&message.destination);
 
-  if (destination < 1 || destination >= ROUTER_COUNT) {
+  if (message.destination < 1 || message.destination >= ROUTER_COUNT) {
     printf("\nInvalid destination router.\n");
     return;
   }
 
-  if (router.id == destination) {
+  if (router.id == message.destination) {
     printf("\nSource and destination cannot be the same.\n");
     return;
   }
 
-  if (router.links[destination].router == NULL) {
-    printf("\nNo link to Router %d.\n", destination);
+  if (router.links[message.destination].router == NULL) {
+    printf("\nNo link to Router %d.\n", message.destination);
     return;
   }
 
   printf("\nEnter message: ");
-  get_string_option(message);
+  get_string_option(message.payload);
 
-  printf("\nSending message from Router %d to Router %d...\n", router.id, destination);
-  printf("Message: %s\n", message);
+  printf("\nSending message from Router %d to Router %d...\n", message.source, message.destination);
+  printf("Message: %s\n", message.payload);
 }
 
 
