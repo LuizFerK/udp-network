@@ -42,9 +42,9 @@ Router setup(int id) {
     strcpy(routers[router_id].host, router_host);
   }
 
-  Router router_config = routers[id];
+  Router router = routers[id];
   
-  printf("Connected to Router %d: Host: %s, Port: %d\n", router_config.id, router_config.host, router_config.port);
+  printf("Connected to Router %d: Host: %s, Port: %d\n", router.id, router.host, router.port);
 
   fclose(router_file);
 
@@ -56,23 +56,23 @@ Router setup(int id) {
 
   int source, dest, weight;
   while (fscanf(link_file, "%d %d %d", &source, &dest, &weight) == 3) {
-    if (source == router_config.id) {
-      router_config.links[dest].router = &routers[dest];
-      router_config.links[dest].weight = weight;
+    if (source == router.id) {
+      router.links[dest].router = &routers[dest];
+      router.links[dest].weight = weight;
     }
 
-    if (dest == router_config.id) {
-      router_config.links[source].router = &routers[source];
-      router_config.links[source].weight = weight;
+    if (dest == router.id) {
+      router.links[source].router = &routers[source];
+      router.links[source].weight = weight;
     }
   }
 
   fclose(link_file);
 
   for (int i = 0; i < ROUTER_COUNT; i++) {
-    if (router_config.links[i].router == NULL) continue;
-    printf("-> Linked to Router %d: Host: %s, Port: %d, Weight: %d\n", router_config.links[i].router->id, router_config.links[i].router->host, router_config.links[i].router->port, router_config.links[i].weight);
+    if (router.links[i].router == NULL) continue;
+    printf("-> Linked to Router %d: Host: %s, Port: %d, Weight: %d\n", router.links[i].router->id, router.links[i].router->host, router.links[i].router->port, router.links[i].weight);
   }
 
-  return router_config;
+  return router;
 }
