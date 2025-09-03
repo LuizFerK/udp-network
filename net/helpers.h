@@ -1,0 +1,1 @@
+int get_cli_opt(int argc, char *argv[], char *key);

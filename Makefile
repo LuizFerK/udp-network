@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99
 TARGET = net.o
-SOURCES = main.c
+SOURCES = main.c net/helpers.c net/setup.c
 OBJECTS = $(SOURCES:.c=.o)
 
 $(TARGET): $(OBJECTS)
