@@ -17,7 +17,7 @@ void* receiver(void* arg) {
     config->receiver.queue.size--;
     pthread_mutex_unlock(&config->receiver.mutex);
 
-    printf("%s Received message from Router %d\n", LOG_PREFIX, message.source);
+    printf("\n%s Received message from Router %d\n", LOG_PREFIX, message.source);
   }
 }
 

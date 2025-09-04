@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include "modules/receiver.h"
 #include "modules/sender.h"
 #include "defs.h"
@@ -73,8 +72,13 @@ void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT])
   printf("\n");
 }
 
-Config setup(int id) {
-  Config config;
+Config* setup(int id) {
+  Config* config = malloc(sizeof(Config));
+  if (config == NULL) {
+    fprintf(stderr, "Error: Failed to allocate memory for config.\n");
+    exit(1);
+  }
+  
   Router routers[ROUTER_COUNT];
 
   if (id == -1) {
@@ -90,18 +94,16 @@ Config setup(int id) {
   
   setup_routers(routers);
 
-  config.router = routers[id];
+  config->router = routers[id];
   printf("Connected to Router %d: Host: %s, Port: %d\n\n",
-         config.router.id,
-         config.router.host,
-         config.router.port);
+         config->router.id,
+         config->router.host,
+         config->router.port);
 
-  setup_links(id, config.links, routers);
+  setup_links(id, config->links, routers);
 
-  setup_controlled_queue(&config, &config.sender, sender);
-  setup_controlled_queue(&config, &config.receiver, receiver);
-
-  sleep(0.005);
+  setup_controlled_queue(config, &config->sender, sender);
+  setup_controlled_queue(config, &config->receiver, receiver);
 
   return config;
 }

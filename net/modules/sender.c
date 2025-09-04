@@ -9,7 +9,7 @@ void* sender(void* arg) {
   Config* config = (Config*)arg;
 
   while (1) {
-    printf("%s Waiting for messages...\n", LOG_PREFIX);
+    printf("%s Waiting for messages to send...\n", LOG_PREFIX);
     sem_wait(&config->sender.semaphore);
 
     pthread_mutex_lock(&config->sender.mutex);
@@ -24,7 +24,7 @@ void* sender(void* arg) {
       // send message through udp
     }
 
-    printf("%s Sent message to Router %d\n", LOG_PREFIX, message.destination);
+    printf("\n%s Sent message to Router %d\n", LOG_PREFIX, message.destination);
   }
 }
 

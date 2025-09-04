@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "../helpers.h"
 #include "menu.h"
 #include "sender.h"
@@ -39,6 +41,8 @@ void cleanup(Config* config) {
   
   sem_destroy(&config->sender.semaphore);
   sem_destroy(&config->receiver.semaphore);
+
+  free(config);
 }
 
 void menu(Config* config) {
@@ -51,6 +55,9 @@ void menu(Config* config) {
     if (menu_opt == 1) {
       send_message(config);
     }
+
+    // sleep 10ms for the threads to print messages
+    sleep(0.01);
 
     printf("\nMenu:\n");
     printf("\n1. Send message");

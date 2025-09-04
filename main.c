@@ -6,9 +6,9 @@
 
 int main(int argc, char *argv[]) {
   int id = get_cli_opt(argc, argv, "-i");
-  Config config = setup(id);
+  Config* config = setup(id);
 
-  menu(&config);
+  menu(config);
 
   return 0;
 }
