@@ -49,7 +49,6 @@ typedef struct Config {
   Link links[ROUTER_COUNT];
   ControlledQueue sender;
   ControlledQueue receiver;
-  ControlledQueue packetHandler;
 } Config;
 
 #endif

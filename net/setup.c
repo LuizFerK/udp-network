@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "modules/packet_handler.h"
 #include "modules/receiver.h"
 #include "modules/sender.h"
 #include "defs.h"
@@ -101,7 +100,6 @@ Config setup(int id) {
 
   setup_controlled_queue(&config, &config.sender, sender);
   setup_controlled_queue(&config, &config.receiver, receiver);
-  setup_controlled_queue(&config, &config.packetHandler, packet_handler);
 
   sleep(0.005);
 

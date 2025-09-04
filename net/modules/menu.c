@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../helpers.h"
 #include "menu.h"
+#include "sender.h"
 
 void send_message(Config* config) {
   Message message;
@@ -23,26 +24,21 @@ void send_message(Config* config) {
   printf("\nEnter message: ");
   get_string_option(message.payload);
 
-  printf("\nSending message from Router %d to Router %d...\n", message.source, message.destination);
-  printf("Message: %s\n", message.payload);
+  sender_put_message(config, message);
 }
 
 void cleanup(Config* config) {
   pthread_cancel(config->sender.thread_id);
   pthread_cancel(config->receiver.thread_id);
-  pthread_cancel(config->packetHandler.thread_id);
   
   pthread_join(config->sender.thread_id, NULL);
   pthread_join(config->receiver.thread_id, NULL);
-  pthread_join(config->packetHandler.thread_id, NULL);
   
   pthread_mutex_destroy(&config->sender.mutex);
   pthread_mutex_destroy(&config->receiver.mutex);
-  pthread_mutex_destroy(&config->packetHandler.mutex);
   
   sem_destroy(&config->sender.semaphore);
   sem_destroy(&config->receiver.semaphore);
-  sem_destroy(&config->packetHandler.semaphore);
 }
 
 void menu(Config* config) {
