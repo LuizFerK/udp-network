@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "modules/packet_handler.h"
 #include "modules/receiver.h"
 #include "modules/sender.h"
 #include "defs.h"
@@ -25,6 +26,13 @@ void setup_routers(Router routers[ROUTER_COUNT]) {
   fclose(router_file);
 }
 
+void setup_thread(Config* config, pthread_t* thread_id, void* (*func)(void*)) {
+  if (pthread_create(thread_id, NULL, func, config) != 0) {
+    fprintf(stderr, "Error while creating thread.\n");
+    exit(1);
+  }
+}
+
 void setup_controlled_queue(Config* config, ControlledQueue* queue, void* (*func)(void*)) {
   pthread_mutex_init(&queue->mutex, NULL);
   sem_init(&queue->semaphore, 0, 0);
@@ -32,10 +40,7 @@ void setup_controlled_queue(Config* config, ControlledQueue* queue, void* (*func
   queue->queue.rear = 0;
   queue->queue.size = 0;
 
-  if (pthread_create(&queue->thread_id, NULL, func, config) != 0) {
-    fprintf(stderr, "Error while creating thread.\n");
-    exit(1);
-  }
+  setup_thread(config, &queue->thread_id, func);
 }
 
 void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT]) {
@@ -79,7 +84,11 @@ Config* setup(int id) {
     exit(1);
   }
   
-  Router routers[ROUTER_COUNT];
+  Router* routers = malloc(sizeof(Router) * ROUTER_COUNT);
+  if (routers == NULL) {
+    fprintf(stderr, "Error: Failed to allocate memory for routers.\n");
+    exit(1);
+  }
 
   if (id == -1) {
     fprintf(stderr, "Error: ID is required. Use -i <id>\n");
@@ -103,7 +112,8 @@ Config* setup(int id) {
   setup_links(id, config->links, routers);
 
   setup_controlled_queue(config, &config->sender, sender);
-  setup_controlled_queue(config, &config->receiver, receiver);
+  setup_controlled_queue(config, &config->packet_handler, packet_handler);
+  setup_thread(config, &config->receiver_thread_id, receiver);
 
   return config;
 }

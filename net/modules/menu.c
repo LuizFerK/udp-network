@@ -23,6 +23,11 @@ void send_message(Config* config) {
     return;
   }
 
+  if (message.source == message.destination) {
+    printf("\nSource and destination cannot be the same.\n");
+    return;
+  }
+
   printf("\nEnter message: ");
   get_string_option(message.payload);
 
@@ -31,16 +36,18 @@ void send_message(Config* config) {
 
 void cleanup(Config* config) {
   pthread_cancel(config->sender.thread_id);
-  pthread_cancel(config->receiver.thread_id);
+  pthread_cancel(config->packet_handler.thread_id);
+  pthread_cancel(config->receiver_thread_id);
   
   pthread_join(config->sender.thread_id, NULL);
-  pthread_join(config->receiver.thread_id, NULL);
-  
+  pthread_join(config->packet_handler.thread_id, NULL);
+  pthread_join(config->receiver_thread_id, NULL);
+
   pthread_mutex_destroy(&config->sender.mutex);
-  pthread_mutex_destroy(&config->receiver.mutex);
-  
+  pthread_mutex_destroy(&config->packet_handler.mutex);
+
   sem_destroy(&config->sender.semaphore);
-  sem_destroy(&config->receiver.semaphore);
+  sem_destroy(&config->packet_handler.semaphore);
 
   free(config);
 }

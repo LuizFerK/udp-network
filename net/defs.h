@@ -48,7 +48,8 @@ typedef struct Config {
   Router router;
   Link links[ROUTER_COUNT];
   ControlledQueue sender;
-  ControlledQueue receiver;
+  ControlledQueue packet_handler;
+  pthread_t receiver_thread_id;
 } Config;
 
 #endif
