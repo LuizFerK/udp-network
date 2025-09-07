@@ -112,8 +112,8 @@ Config* setup(int id) {
   setup_links(id, config->links, routers);
 
   setup_controlled_queue(config, &config->sender, sender);
-  setup_controlled_queue(config, &config->packet_handler, packet_handler);
   setup_thread(config, &config->receiver_thread_id, receiver);
+  setup_controlled_queue(config, &config->packet_handler, packet_handler);
 
   return config;
 }

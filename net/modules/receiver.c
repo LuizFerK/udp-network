@@ -1,13 +1,12 @@
+#include <arpa/inet.h>
 #include <semaphore.h>
 #include <stdio.h>
-#include "receiver.h"
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "packet_handler.h"
-
-#include<string.h> //memset
-#include<stdlib.h> //exit(0);
-#include<unistd.h> //close()
-#include<arpa/inet.h>
-#include<sys/socket.h>
+#include "receiver.h"
 
 #define LOG_PREFIX "[Receiver]"
 #define BUFLEN 512
@@ -20,53 +19,41 @@ static void die(char *s) {
 void* receiver(void* arg) {
   Config* config = (Config*)arg;
 
-  struct sockaddr_in si_me, si_other;
+  struct sockaddr_in server_addr, client_addr;
      
-  int s, recv_len;
-  socklen_t slen = sizeof(si_other);
-  char buf[BUFLEN];
+  int socket_fd, received_bytes;
+  socklen_t client_addr_len = sizeof(client_addr);
+  char buffer[BUFLEN];
     
-  //create a UDP socket
-  if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-    die("socket");
+  if ((socket_fd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+    die("Error creating socket");
   }
     
-  // zero out the structure
-  memset((char *) &si_me, 0, sizeof(si_me));
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(config->router.port);
+  server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     
-  si_me.sin_family = AF_INET;
-  si_me.sin_port = htons(config->router.port);
-  si_me.sin_addr.s_addr = htonl(INADDR_ANY);
-    
-  //bind socket to port
-  if( bind(s , (struct sockaddr*)&si_me, sizeof(si_me) ) == -1) {
-    die("bind");
+  if( bind(socket_fd , (struct sockaddr*)&server_addr, sizeof(server_addr) ) == -1) {
+    die("Error binding socket to port");
   }
     
-  //keep listening for data
   while (1) {
-    printf("%s Waiting for messages...\n", LOG_PREFIX);
-    fflush(stdout);
-    //receive a reply and print it
-    //clear the buffer by filling null, it might have previously received data
-    memset(buf,'\0', BUFLEN);
+    printf("%s Waiting for messages on port %d...\n", LOG_PREFIX, config->router.port);
+    
+    memset(buffer,'\0', BUFLEN);
 
-    //try to receive some data, this is a blocking call
-    if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1) {
-      die("recvfrom()");
+    if ((received_bytes = recvfrom(socket_fd, buffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &client_addr_len)) == -1) {
+      die("Error receiving data");
     }
       
-    //print details of the client/peer and the data received
-    printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-    printf("Data: %s\n" , buf);
-      
-    //now reply the client with the same data
-    // if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1) {
-    //   die("sendto()");
-    // }
+    printf("%s Received packet from %s:%d\n", LOG_PREFIX, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    
+    Message message;
+    message.type = 1;
+    // message.source = ?;
+    // message.destination = ?;
+    strcpy(message.payload, buffer);
+
+    packet_handler_put_message(config, message);
   }
-
-  close(s);
-
-  return NULL;
 }

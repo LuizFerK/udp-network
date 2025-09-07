@@ -8,7 +8,7 @@ void* packet_handler(void* arg) {
   Config* config = (Config*)arg;
 
   while (1) {
-    printf("%s Waiting for messages...\n", LOG_PREFIX);
+    printf("%s Waiting for messages to handle...\n", LOG_PREFIX);
     sem_wait(&config->packet_handler.semaphore);
 
     pthread_mutex_lock(&config->packet_handler.mutex);
@@ -18,6 +18,7 @@ void* packet_handler(void* arg) {
     pthread_mutex_unlock(&config->packet_handler.mutex);
 
     printf("\n%s Received message from Router %d\n", LOG_PREFIX, message.source);
+    printf("%s Message: %s\n", LOG_PREFIX, message.payload);
   }
 }
 

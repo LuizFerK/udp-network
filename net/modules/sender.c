@@ -20,15 +20,13 @@ static void die(char *s) {
 void* sender(void* arg) {
   Config* config = (Config*)arg;
 
-  struct sockaddr_in si_other;
-  int s, slen=sizeof(si_other);
-  char buf[BUFLEN];
+  struct sockaddr_in destination_addr;
+  int socket_fd, dest_addr_len=sizeof(destination_addr);
 
-  if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-    die("socket");
+  destination_addr.sin_family = AF_INET;
+  if ( (socket_fd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+    die("Error creating socket");
   }
-
-  memset((char *) &si_other, 0, sizeof(si_other));
 
   while (1) {
     printf("%s Waiting for messages to send...\n", LOG_PREFIX);
@@ -40,29 +38,17 @@ void* sender(void* arg) {
     config->sender.queue.size--;
     pthread_mutex_unlock(&config->sender.mutex);
 
-    si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(config->links[message.destination].router->port);
+    destination_addr.sin_port = htons(config->links[message.destination].router->port);
 
-    printf("Destination router: %d\n", message.destination);
-    printf("Destination router: %d\n", config->links[message.destination].router->id);
-    printf("%s Sending message to %s:%d\n", LOG_PREFIX, config->links[message.destination].router->host, config->links[message.destination].router->port);
-      
-    if (inet_pton(AF_INET, config->links[message.destination].router->host, &si_other.sin_addr) <= 0) {
-      fprintf(stderr, "inet_pton() failed\n");
-      exit(1);
+    if (inet_pton(AF_INET, config->links[message.destination].router->host, &destination_addr.sin_addr) <= 0) {
+      die("Error converting host to IP address");
     }
 
-    // send message through udp
+    if (sendto(socket_fd, message.payload, strlen(message.payload) , 0 , (struct sockaddr *) &destination_addr, dest_addr_len)==-1) {
+      die("Error sending message");
+    }
+
     printf("\n%s Sent message to Router %d\n", LOG_PREFIX, message.destination);
-
-    //send the message
-    if (sendto(s, message.payload, strlen(message.payload) , 0 , (struct sockaddr *) &si_other, slen)==-1) {
-      die("sendto()");
-    }
-     
-    //receive a reply and print it
-    //clear the buffer by filling null, it might have previously received data
-    memset(buf,'\0', BUFLEN);
   }
 }
 
