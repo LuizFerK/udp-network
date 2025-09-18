@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "modules/packet_handler.h"
 #include "modules/receiver.h"
 #include "modules/sender.h"
@@ -77,6 +80,25 @@ void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT])
   printf("\n");
 }
 
+void setup_udp_socket(Config* config) {
+  config->socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  if (config->socket_fd == -1) {
+    fprintf(stderr, "Error creating socket.\n");
+    exit(1);
+  }
+    
+  struct sockaddr_in server_addr;
+
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(config->router.port);
+  server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    
+  if( bind(config->socket_fd , (struct sockaddr*)&server_addr, sizeof(server_addr) ) == -1) {
+    fprintf(stderr, "Error binding socket to port.\n");
+    exit(1);
+  }
+}
+
 Config* setup(int id) {
   Config* config = malloc(sizeof(Config));
   if (config == NULL) {
@@ -110,6 +132,8 @@ Config* setup(int id) {
          config->router.port);
 
   setup_links(id, config->links, routers);
+
+  setup_udp_socket(config);
 
   setup_controlled_queue(config, &config->sender, sender);
   setup_thread(config, &config->receiver_thread_id, receiver);

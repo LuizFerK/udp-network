@@ -10,6 +10,8 @@
 #define HOST_CHAR_LIMIT 15
 #define PAYLOAD_CHAR_LIMIT 100
 #define QUEUE_CAPACITY 10
+#define INFO_PREFIX "[INFO]"
+#define ERROR_PREFIX "[ERROR]"
 
 typedef struct Router {
   int id;
@@ -50,6 +52,7 @@ typedef struct Config {
   ControlledQueue sender;
   ControlledQueue packet_handler;
   pthread_t receiver_thread_id;
+  int socket_fd;
 } Config;
 
 #endif

@@ -1,37 +1,65 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "../helpers.h"
 #include "menu.h"
 #include "sender.h"
 
-void send_message(Config* config) {
+void send_message(Config* config, int destination, char* message_text) {
   Message message;
   message.type = 1;
   message.source = config->router.id;
-
-  printf("\nEnter destination router: ");
-  get_int_option(&message.destination);
+  message.destination = destination;
 
   if (message.destination < 1 || message.destination >= ROUTER_COUNT) {
-    printf("\nInvalid destination router.\n");
+    printf("%s Invalid destination router.\n", INFO_PREFIX);
     return;
   }
 
   if (config->router.id != message.destination && config->links[message.destination].router == NULL) {
-    printf("\nNo link to Router %d.\n", message.destination);
+    printf("%s No link to Router %d.\n", INFO_PREFIX, message.destination);
     return;
   }
 
   if (message.source == message.destination) {
-    printf("\nSource and destination cannot be the same.\n");
+    printf("%s Source and destination cannot be the same.\n", INFO_PREFIX);
     return;
   }
 
-  printf("\nEnter message: ");
-  get_string_option(message.payload);
+  strncpy(message.payload, message_text, PAYLOAD_CHAR_LIMIT - 1);
+  message.payload[PAYLOAD_CHAR_LIMIT - 1] = '\0';
 
   sender_put_message(config, message);
+}
+
+int parse_send_command(char* input, int* destination, char* message) {
+  char* token;
+  char* saveptr;
+  int found_t = 0, found_m = 0;
+  
+  token = strtok_r(input, " ", &saveptr);
+  
+  if (strcmp(token, "send") != 0) {
+    return 0;
+  }
+  
+  while ((token = strtok_r(NULL, " ", &saveptr)) != NULL) {
+    if (strcmp(token, "-t") == 0) {
+      token = strtok_r(NULL, " ", &saveptr);
+      if (token == NULL) return 0;
+      *destination = atoi(token);
+      found_t = 1;
+    } else if (strcmp(token, "-m") == 0) {
+      token = strtok_r(NULL, " ", &saveptr);
+      if (token == NULL) return 0;
+      strcpy(message, token);
+      found_m = 1;
+    }
+  }
+  
+  return found_t && found_m;
 }
 
 void cleanup(Config* config) {
@@ -49,31 +77,51 @@ void cleanup(Config* config) {
   sem_destroy(&config->sender.semaphore);
   sem_destroy(&config->packet_handler.semaphore);
 
+  close(config->socket_fd);
+
   free(config);
 }
 
+void print_menu() {
+  printf("\nAvailable commands:\n");
+  printf("menu - show this help\n");
+  printf("send -t <destination> -m <message> - send a message\n");
+  printf("exit - exit the program\n");
+  printf("\n-------------------------------\n\n");
+}
+
 void menu(Config* config) {
-  int menu_opt = -1;
-  while (menu_opt != 2) {
-    if (menu_opt != -1 && menu_opt != 1) {
-      printf("\nInvalid option.\n");
+  char input[256];
+  int destination;
+  char message[PAYLOAD_CHAR_LIMIT];
+  
+  // sleep 10ms for the threads to print messages
+  sleep(0.1);
+  print_menu();
+
+  while (1) {
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+      break;
     }
-
-    if (menu_opt == 1) {
-      send_message(config);
-    }
-
-    // sleep 10ms for the threads to print messages
-    sleep(0.01);
-
-    printf("\nMenu:\n");
-    printf("\n1. Send message");
-    printf("\n2. Exit\n");
-    printf("\nEnter choice: ");
     
-    get_int_option(&menu_opt);
-    if (menu_opt == -1) {
-      printf("\nInvalid option.\n");
+    input[strcspn(input, "\n")] = 0;
+    
+    if (strcmp(input, "menu") == 0) {
+      printf("\nAvailable commands:\n");
+      printf("menu - show this help\n");
+      printf("send -t <destination> -m <message> - send a message\n");
+      printf("exit - exit the program\n");
+      printf("\n-------------------------------\n\n");
+    } else if (strncmp(input, "send", 4) == 0) {
+      if (parse_send_command(input, &destination, message)) {
+        send_message(config, destination, message);
+      } else {
+        printf("%s Invalid send command format. Use: send -t <destination> -m <message>\n", ERROR_PREFIX);
+      }
+    } else if (strcmp(input, "exit") == 0) {
+      break;
+    } else {
+      printf("%s Invalid option.\n", INFO_PREFIX);
     }
   }
 

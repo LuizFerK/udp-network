@@ -18,31 +18,19 @@ static void die(char *s) {
 
 void* receiver(void* arg) {
   Config* config = (Config*)arg;
-
-  struct sockaddr_in server_addr, client_addr;
-     
-  int socket_fd, received_bytes;
-  socklen_t client_addr_len = sizeof(client_addr);
+    
+  int received_bytes;
   char buffer[BUFLEN];
-    
-  if ((socket_fd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-    die("Error creating socket");
-  }
-    
-  server_addr.sin_family = AF_INET;
-  server_addr.sin_port = htons(config->router.port);
-  server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    
-  if( bind(socket_fd , (struct sockaddr*)&server_addr, sizeof(server_addr) ) == -1) {
-    die("Error binding socket to port");
-  }
-    
+
+  struct sockaddr_in client_addr;
+  socklen_t client_addr_len = sizeof(client_addr);
+  
   while (1) {
     printf("%s Waiting for messages on port %d...\n", LOG_PREFIX, config->router.port);
     
     memset(buffer,'\0', BUFLEN);
 
-    if ((received_bytes = recvfrom(socket_fd, buffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &client_addr_len)) == -1) {
+    if ((received_bytes = recvfrom(config->socket_fd, buffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &client_addr_len)) == -1) {
       die("Error receiving data");
     }
       
@@ -50,9 +38,17 @@ void* receiver(void* arg) {
     
     Message message;
     message.type = 1;
-    // message.source = ?;
-    // message.destination = ?;
+    message.destination = config->router.id;
     strcpy(message.payload, buffer);
+
+    for (int i = 0; i < ROUTER_COUNT; i++) {
+      if (config->links[i].router == NULL) continue;
+      if (strcmp(config->links[i].router->host, inet_ntoa(client_addr.sin_addr)) == 0) {
+        message.source = config->links[i].router->id;
+        printf("%s Found source: Router %d\n", LOG_PREFIX, message.source);
+        break;
+      }
+    }
 
     packet_handler_put_message(config, message);
   }

@@ -17,7 +17,7 @@ void* packet_handler(void* arg) {
     config->packet_handler.queue.size--;
     pthread_mutex_unlock(&config->packet_handler.mutex);
 
-    printf("\n%s Received message from Router %d\n", LOG_PREFIX, message.source);
+    printf("%s Received message from Router %d\n", LOG_PREFIX, message.source);
     printf("%s Message: %s\n", LOG_PREFIX, message.payload);
   }
 }

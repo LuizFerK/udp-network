@@ -21,12 +21,9 @@ void* sender(void* arg) {
   Config* config = (Config*)arg;
 
   struct sockaddr_in destination_addr;
-  int socket_fd, dest_addr_len=sizeof(destination_addr);
+  int dest_addr_len=sizeof(destination_addr);
 
   destination_addr.sin_family = AF_INET;
-  if ( (socket_fd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-    die("Error creating socket");
-  }
 
   while (1) {
     printf("%s Waiting for messages to send...\n", LOG_PREFIX);
@@ -44,11 +41,11 @@ void* sender(void* arg) {
       die("Error converting host to IP address");
     }
 
-    if (sendto(socket_fd, message.payload, strlen(message.payload) , 0 , (struct sockaddr *) &destination_addr, dest_addr_len)==-1) {
+    if (sendto(config->socket_fd, message.payload, strlen(message.payload) , 0 , (struct sockaddr *) &destination_addr, dest_addr_len)==-1) {
       die("Error sending message");
     }
 
-    printf("\n%s Sent message to Router %d\n", LOG_PREFIX, message.destination);
+    printf("%s Sent message to Router %d\n", LOG_PREFIX, message.destination);
   }
 }
 
