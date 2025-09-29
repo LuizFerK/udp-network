@@ -41,7 +41,7 @@ void* sender(void* arg) {
       die("Error converting host to IP address");
     }
 
-    if (sendto(config->socket_fd, message.payload, strlen(message.payload) , 0 , (struct sockaddr *) &destination_addr, dest_addr_len)==-1) {
+    if (sendto(config->socket_fd, &message, sizeof(Message) , 0 , (struct sockaddr *) &destination_addr, dest_addr_len)==-1) {
       die("Error sending message");
     }
 

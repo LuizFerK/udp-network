@@ -54,7 +54,25 @@ int parse_send_command(char* input, int* destination, char* message) {
     } else if (strcmp(token, "-m") == 0) {
       token = strtok_r(NULL, " ", &saveptr);
       if (token == NULL) return 0;
-      strcpy(message, token);
+      
+      // supports quoted messages to handle spaces in the message
+      if (token[0] == '\'') {
+        strcpy(message, token + 1);
+        
+        while ((token = strtok_r(NULL, " ", &saveptr)) != NULL) {
+          if (token[strlen(token) - 1] == '\'') {
+            token[strlen(token) - 1] = '\0';
+            strcat(message, " ");
+            strcat(message, token);
+            break;
+          } else {
+            strcat(message, " ");
+            strcat(message, token);
+          }
+        }
+      } else {
+        strcpy(message, token);
+      }
       found_m = 1;
     }
   }
@@ -85,7 +103,7 @@ void cleanup(Config* config) {
 void print_menu() {
   printf("\nAvailable commands:\n");
   printf("menu - show this help\n");
-  printf("send -t <destination> -m <message> - send a message\n");
+  printf("send -t <destination> -m '<message>' - send a message\n");
   printf("exit - exit the program\n");
   printf("\n-------------------------------\n\n");
 }
@@ -107,11 +125,7 @@ void menu(Config* config) {
     input[strcspn(input, "\n")] = 0;
     
     if (strcmp(input, "menu") == 0) {
-      printf("\nAvailable commands:\n");
-      printf("menu - show this help\n");
-      printf("send -t <destination> -m <message> - send a message\n");
-      printf("exit - exit the program\n");
-      printf("\n-------------------------------\n\n");
+      print_menu();
     } else if (strncmp(input, "send", 4) == 0) {
       if (parse_send_command(input, &destination, message)) {
         send_message(config, destination, message);
