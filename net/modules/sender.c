@@ -25,8 +25,9 @@ void* sender(void* arg) {
 
   destination_addr.sin_family = AF_INET;
 
+  printf("%s Waiting for messages to send...\n", LOG_PREFIX);
+  
   while (1) {
-    printf("%s Waiting for messages to send...\n", LOG_PREFIX);
     sem_wait(&config->sender.semaphore);
 
     pthread_mutex_lock(&config->sender.mutex);
@@ -45,7 +46,8 @@ void* sender(void* arg) {
       die("Error sending message");
     }
 
-    printf("%s Sent message to Router %d\n", LOG_PREFIX, message.destination);
+    char* message_type = message.type == 1 ? "message" : "control message";
+    printf("%s Sent %s to Router %d\n", LOG_PREFIX, message_type, message.destination);
   }
 }
 

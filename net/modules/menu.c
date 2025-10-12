@@ -113,8 +113,6 @@ void menu(Config* config) {
   int destination;
   char message[PAYLOAD_CHAR_LIMIT];
   
-  // sleep 10ms for the threads to print messages
-  sleep(0.1);
   print_menu();
 
   while (1) {

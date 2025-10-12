@@ -25,9 +25,9 @@ void* receiver(void* arg) {
   struct sockaddr_in client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
   
+  printf("%s Waiting for messages on port %d...\n", LOG_PREFIX, config->router.port);
+  
   while (1) {
-    printf("%s Waiting for messages on port %d...\n", LOG_PREFIX, config->router.port);
-    
     memset(&message, 0, sizeof(Message));
 
     if ((received_bytes = recvfrom(config->socket_fd, &message, sizeof(Message), 0, (struct sockaddr *) &client_addr, &client_addr_len)) == -1) {

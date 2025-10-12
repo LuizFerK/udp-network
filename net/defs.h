@@ -20,6 +20,7 @@ typedef struct Router {
 } Router;
 
 typedef struct {
+  int distance_vector[ROUTER_COUNT];
   Router *router;
   int weight;
 } Link;

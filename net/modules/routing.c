@@ -1,19 +1,35 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+#include "sender.h"
 #include "routing.h"
 
 #define LOG_PREFIX "[Routing]"
 
-void send_distance_vector(Config* config, int reason) {
-  printf("%s Sending distance vector to neighbors", LOG_PREFIX);
-
-  if (reason == 1) {
-    printf(" (TIMEOUT)\n");
-  } else if (reason == 2) {
-    printf(" (UPDATE)\n");
+void build_distance_vector(Config* config, int distance_vector[ROUTER_COUNT]) {
+  for (int i = 0; i < ROUTER_COUNT; i++) {
+    if (config->links[i].router == NULL) continue;
+    distance_vector[i] = config->links[i].weight;
   }
+}
 
-  // TODO: send distance vector to neighbors
+void send_distance_vector(Config* config, int reason) {
+  char* reason_str = reason == 1 ? "TIMEOUT" : "UPDATE";
+  printf("%s Sending distance vector to neighbors (%s)\n", LOG_PREFIX, reason_str);
+
+  int distance_vector[ROUTER_COUNT];
+  build_distance_vector(config, distance_vector);
+
+  Message message;
+  message.type = 2;
+  message.source = config->router.id;
+  sprintf(message.payload, "%d", distance_vector);
+  
+  for (int i = 0; i < ROUTER_COUNT; i++) {
+    if (config->links[i].router == NULL) continue;
+    message.destination = i;
+    sender_put_message(config, message);
+  }
 }
 
 void* routing(void* arg) {
@@ -21,7 +37,6 @@ void* routing(void* arg) {
 
   while (1) {
     send_distance_vector(config, 1);
-    printf("%s Waiting %d seconds to send distance vector...\n", LOG_PREFIX, config->routing.timeout);
     sleep(config->routing.timeout);
   }
 }
