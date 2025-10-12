@@ -3,17 +3,17 @@
 #include <string.h>
 #include <time.h>
 
-int get_cli_opt(int argc, char *argv[], char *key) {
-  int id = -1;
+int get_cli_opt(int argc, char *argv[], char *key, int default_value) {
+  int value = default_value;
   
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], key) == 0 && i + 1 < argc) {
-      id = atoi(argv[i + 1]);
+      value = atoi(argv[i + 1]);
       break;
     }
   }
 
-  return id;
+  return value;
 }
 
 void get_int_option(int* option) {

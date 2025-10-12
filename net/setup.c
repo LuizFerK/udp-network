@@ -8,6 +8,7 @@
 #include "modules/packet_handler.h"
 #include "modules/receiver.h"
 #include "modules/sender.h"
+#include "modules/routing.h"
 #include "defs.h"
 #include "setup.h"
 
@@ -99,7 +100,7 @@ void setup_udp_socket(Config* config) {
   }
 }
 
-Config* setup(int id) {
+Config* setup(int id, int routing_timeout) {
   Config* config = malloc(sizeof(Config));
   if (config == NULL) {
     fprintf(stderr, "Error: Failed to allocate memory for config.\n");
@@ -138,6 +139,9 @@ Config* setup(int id) {
   setup_controlled_queue(config, &config->sender, sender);
   setup_thread(config, &config->receiver_thread_id, receiver);
   setup_controlled_queue(config, &config->packet_handler, packet_handler);
+
+  config->routing.timeout = routing_timeout;
+  setup_thread(config, &config->routing.thread_id, routing);
 
   return config;
 }

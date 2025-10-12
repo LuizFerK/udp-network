@@ -46,8 +46,14 @@ typedef struct ControlledQueue {
   pthread_t thread_id;
 } ControlledQueue;
 
+typedef struct Routing {
+  pthread_t thread_id;
+  int timeout;
+} Routing;
+
 typedef struct Config {
   Router router;
+  Routing routing;
   Link links[ROUTER_COUNT];
   ControlledQueue sender;
   ControlledQueue packet_handler;

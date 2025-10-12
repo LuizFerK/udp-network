@@ -5,8 +5,9 @@
 #include "net/modules/menu.h"
 
 int main(int argc, char *argv[]) {
-  int id = get_cli_opt(argc, argv, "-i");
-  Config* config = setup(id);
+  int id = get_cli_opt(argc, argv, "-i", -1);
+  int routing_timeout = get_cli_opt(argc, argv, "-t", 10);
+  Config* config = setup(id, routing_timeout);
 
   menu(config);
 
