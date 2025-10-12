@@ -35,9 +35,7 @@ void* receiver(void* arg) {
     }
       
     printf("%s Received packet from %s:%d\n", LOG_PREFIX, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-    
-    // message now contains type, source, destination, and payload from sender
-    printf("%s Message type: %d, source: %d, destination: %d, payload: %s\n", LOG_PREFIX, message.type, message.source, message.destination, message.payload);
+    printf("%s Message type: %d, source: %d, destination: %d\n", LOG_PREFIX, message.type, message.source, message.destination);
 
     packet_handler_put_message(config, message);
   }

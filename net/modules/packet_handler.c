@@ -1,8 +1,23 @@
 #include <semaphore.h>
 #include <stdio.h>
+#include <string.h>
 #include "packet_handler.h"
 
 #define LOG_PREFIX "[Packet Handler]"
+
+void handle_message(Message message) {
+  printf("%s Message: %s\n", LOG_PREFIX, message.payload);
+}
+
+void handle_control_message(Config* config, Message message) {
+  printf("%s Distance vector: ", LOG_PREFIX);
+  int* distance_vector = (int*)message.payload;
+  for (int i = 0; i < ROUTER_COUNT; i++) {
+    printf("%d ", distance_vector[i]);
+  }
+  memcpy(config->links[message.source].distance_vector, distance_vector, ROUTER_COUNT * sizeof(int));
+  printf("\n");
+}
 
 void* packet_handler(void* arg) {
   Config* config = (Config*)arg;
@@ -17,13 +32,9 @@ void* packet_handler(void* arg) {
     config->packet_handler.queue.size--;
     pthread_mutex_unlock(&config->packet_handler.mutex);
 
-    printf("%s Received message from Router %d\n", LOG_PREFIX, message.source);
-    
-    if (message.type == 1) {
-      printf("%s Message: %s\n", LOG_PREFIX, message.payload);
-    } else if (message.type == 2) {
-      printf("%s Distance vector: %s\n", LOG_PREFIX, message.payload);
-    }
+    char* message_type = message.type == 1 ? "message" : "control message";
+    printf("%s Received %s from Router %d\n", LOG_PREFIX, message_type, message.source);
+    message.type == 1 ? handle_message(message) : handle_control_message(config, message);
   }
 }
 

@@ -18,6 +18,7 @@ void send_message(Config* config, int destination, char* message_text) {
     return;
   }
 
+  // TODO: handle by routing table
   if (config->router.id != message.destination && config->links[message.destination].router == NULL) {
     printf("%s No link to Router %d.\n", INFO_PREFIX, message.destination);
     return;
@@ -28,8 +29,8 @@ void send_message(Config* config, int destination, char* message_text) {
     return;
   }
 
-  strncpy(message.payload, message_text, PAYLOAD_CHAR_LIMIT - 1);
-  message.payload[PAYLOAD_CHAR_LIMIT - 1] = '\0';
+  strncpy(message.payload, message_text, PAYLOAD_SIZE - 1);
+  message.payload[PAYLOAD_SIZE - 1] = '\0';
 
   sender_put_message(config, message);
 }
@@ -57,7 +58,7 @@ int parse_send_command(char* input, int* destination, char* message) {
       
       // supports quoted messages to handle spaces in the message
       if (token[0] == '\'') {
-        strcpy(message, token + 1);
+        strncpy(message, token + 1, PAYLOAD_SIZE);
         
         while ((token = strtok_r(NULL, " ", &saveptr)) != NULL) {
           if (token[strlen(token) - 1] == '\'') {
@@ -71,7 +72,7 @@ int parse_send_command(char* input, int* destination, char* message) {
           }
         }
       } else {
-        strcpy(message, token);
+        strncpy(message, token, PAYLOAD_SIZE);
       }
       found_m = 1;
     }
@@ -111,7 +112,7 @@ void print_menu() {
 void menu(Config* config) {
   char input[256];
   int destination;
-  char message[PAYLOAD_CHAR_LIMIT];
+  char message[PAYLOAD_SIZE];
   
   print_menu();
 

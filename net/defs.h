@@ -8,7 +8,7 @@
 #define LINK_CONFIG_FILE "config/link.config"
 #define ROUTER_COUNT 5
 #define HOST_CHAR_LIMIT 15
-#define PAYLOAD_CHAR_LIMIT 100
+#define PAYLOAD_SIZE 100 // should be greater than ROUTER_COUNT * sizeof(int) to handle the distance vector
 #define QUEUE_CAPACITY 10
 #define INFO_PREFIX "[INFO]"
 #define ERROR_PREFIX "[ERROR]"
@@ -21,6 +21,7 @@ typedef struct Router {
 
 typedef struct {
   int distance_vector[ROUTER_COUNT];
+  // TODO: implement distance vector TTL
   Router *router;
   int weight;
 } Link;
@@ -30,7 +31,7 @@ typedef struct Message {
   int type;
   int source;
   int destination;
-  char payload[PAYLOAD_CHAR_LIMIT];
+  char payload[PAYLOAD_SIZE];
 } Message;
 
 typedef struct Queue {
@@ -48,6 +49,7 @@ typedef struct ControlledQueue {
 } ControlledQueue;
 
 typedef struct Routing {
+  // TODO: routing table to find the next hop
   pthread_t thread_id;
   int timeout;
 } Routing;
