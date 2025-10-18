@@ -20,10 +20,10 @@ static void die(char *s) {
 void* sender(void* arg) {
   Config* config = (Config*)arg;
 
-  struct sockaddr_in destination_addr;
-  int dest_addr_len=sizeof(destination_addr);
+  struct sockaddr_in next_hop_addr;
+  int next_hop_addr_len=sizeof(next_hop_addr);
 
-  destination_addr.sin_family = AF_INET;
+  next_hop_addr.sin_family = AF_INET;
 
   printf("%s Waiting for messages to send...\n", LOG_PREFIX);
   
@@ -36,18 +36,18 @@ void* sender(void* arg) {
     config->sender.queue.size--;
     pthread_mutex_unlock(&config->sender.mutex);
 
-    destination_addr.sin_port = htons(config->links[message.destination].router->port);
+    next_hop_addr.sin_port = htons(config->links[message.next_hop].router->port);
 
-    if (inet_pton(AF_INET, config->links[message.destination].router->host, &destination_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, config->links[message.next_hop].router->host, &next_hop_addr.sin_addr) <= 0) {
       die("Error converting host to IP address");
     }
 
-    if (sendto(config->socket_fd, &message, sizeof(Message) , 0 , (struct sockaddr *) &destination_addr, dest_addr_len)==-1) {
+    if (sendto(config->socket_fd, &message, sizeof(Message) , 0 , (struct sockaddr *) &next_hop_addr, next_hop_addr_len)==-1) {
       die("Error sending message");
     }
 
     char* message_type = message.type == 1 ? "message" : "control message";
-    printf("%s Sent %s to Router %d\n", LOG_PREFIX, message_type, message.destination);
+    printf("%s Sent %s to Router %d\n", LOG_PREFIX, message_type, message.next_hop);
   }
 }
 

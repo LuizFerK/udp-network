@@ -47,7 +47,7 @@ void setup_controlled_queue(Config* config, ControlledQueue* queue, void* (*func
   setup_thread(config, &queue->thread_id, func);
 }
 
-void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT]) {
+void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT], int routing_timeout) {
   FILE *link_file = fopen(LINK_CONFIG_FILE, "r");
   if (link_file == NULL) {
     fprintf(stderr, "Error while opening link config file.\n");
@@ -69,8 +69,9 @@ void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT])
 
   fclose(link_file);
 
-  for (int i = 0; i < ROUTER_COUNT; i++) {
+  for (int i = 1; i < ROUTER_COUNT; i++) {
     if (links[i].router == NULL) continue;
+    links[i].expires_at = time(NULL) + (routing_timeout * 3);
     printf("-> Linked to Router %d: Host: %s, Port: %d, Weight: %d\n",
            links[i].router->id,
            links[i].router->host,
@@ -79,6 +80,23 @@ void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT])
   }
 
   printf("\n");
+}
+
+void setup_routing_table(Config* config) {
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (config->links[i].router == NULL) {
+      config->routing.routing_table[i] = -1;
+    } else {
+      config->routing.routing_table[i] = i;
+    }
+  }
+  config->routing.routing_table[config->router.id] = config->router.id;
+  
+  printf("Routing table: ");
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    printf("%d ", config->routing.routing_table[i]);
+  }
+  printf("\n\n");
 }
 
 void setup_udp_socket(Config* config) {
@@ -132,7 +150,9 @@ Config* setup(int id, int routing_timeout) {
          config->router.host,
          config->router.port);
 
-  setup_links(id, config->links, routers);
+  setup_links(id, config->links, routers, routing_timeout);
+
+  setup_routing_table(config);
 
   setup_udp_socket(config);
 

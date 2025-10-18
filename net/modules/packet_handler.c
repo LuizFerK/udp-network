@@ -12,10 +12,14 @@ void handle_message(Message message) {
 void handle_control_message(Config* config, Message message) {
   printf("%s Distance vector: ", LOG_PREFIX);
   int* distance_vector = (int*)message.payload;
-  for (int i = 0; i < ROUTER_COUNT; i++) {
+  for (int i = 1; i < ROUTER_COUNT; i++) {
     printf("%d ", distance_vector[i]);
   }
+  
+  time_t now = time(NULL);
+  config->links[message.source].expires_at = now + (config->routing.timeout * 3);
   memcpy(config->links[message.source].distance_vector, distance_vector, ROUTER_COUNT * sizeof(int));
+  
   printf("\n");
 }
 

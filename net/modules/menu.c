@@ -18,14 +18,16 @@ void send_message(Config* config, int destination, char* message_text) {
     return;
   }
 
-  // TODO: handle by routing table
-  if (config->router.id != message.destination && config->links[message.destination].router == NULL) {
-    printf("%s No link to Router %d.\n", INFO_PREFIX, message.destination);
-    return;
-  }
-
   if (message.source == message.destination) {
     printf("%s Source and destination cannot be the same.\n", INFO_PREFIX);
+    return;
+  }
+  
+  message.next_hop = config->routing.routing_table[destination];
+  message.hops = 1;
+
+  if (message.next_hop == -1) {
+    printf("%s Destination router is unreachable.\n", INFO_PREFIX);
     return;
   }
 

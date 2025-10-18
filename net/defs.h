@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
 #define ROUTER_CONFIG_FILE "config/router.config"
 #define LINK_CONFIG_FILE "config/link.config"
@@ -21,7 +22,7 @@ typedef struct Router {
 
 typedef struct {
   int distance_vector[ROUTER_COUNT];
-  // TODO: implement distance vector TTL
+  time_t expires_at;
   Router *router;
   int weight;
 } Link;
@@ -31,6 +32,8 @@ typedef struct Message {
   int type;
   int source;
   int destination;
+  int next_hop;
+  int hops;
   char payload[PAYLOAD_SIZE];
 } Message;
 
@@ -49,7 +52,7 @@ typedef struct ControlledQueue {
 } ControlledQueue;
 
 typedef struct Routing {
-  // TODO: routing table to find the next hop
+  int routing_table[ROUTER_COUNT];
   pthread_t thread_id;
   int timeout;
 } Routing;
