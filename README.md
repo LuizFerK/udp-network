@@ -9,26 +9,52 @@ A multi-threaded network simulation program that implements a distributed router
 - **Thread-safe Queues**: Message queues with mutex and semaphore synchronization
 - **Interactive Menu**: Command-line interface for sending messages
 - **Configurable Topology**: Network topology defined in configuration files
+- **Distance Vector Routing**: Implements distributed routing algorithm with automatic route discovery
+- **Routing Table**: Dynamic routing table management with next-hop information
+- **Link State Monitoring**: Automatic link timeout detection and route updates
 - **Message Routing**: Support for data and control message types
+
+## Routing Behavior
+
+### Automatic Route Discovery
+
+The system automatically discovers routes through distance vector updates:
+
+- **Periodic Updates**: Each router broadcasts its distance vector every 30 seconds (or custom timeout)
+- **Route Learning**: Routers learn about network topology from received distance vectors
+- **Convergence**: Routes automatically converge to optimal paths as updates propagate
+
+### Link Monitoring
+
+- **Timeout Detection**: Links are marked as expired if no updates are received within 3× timeout period
+- **Automatic Recovery**: Routes are restored when connectivity is re-established
+- **Route Updates**: Routing tables are updated when better paths are discovered
+
+### Message Forwarding
+
+- **Next-Hop Routing**: Messages include `next_hop` field for proper forwarding
+- **Hop Counting**: Messages track the number of hops taken
+- **Route Optimization**: Messages follow the shortest known path to destination
 
 ## Project Structure
 
 ```
 net/
-├── main.c                    # Entry point
+├── main.c                          # Entry point
 ├── net/
-│   ├── defs.h               # Data structures and constants
-│   ├── setup.c/h            # Router initialization and configuration
-│   ├── helpers.c/h          # Utility functions
+│   ├── defs.h                      # Data structures and constants
+│   ├── setup.c/h                   # Router initialization and configuration
+│   ├── helpers.c/h                 # Utility functions
 │   └── modules/
-│       ├── menu.c/h         # Interactive command interface
-│       ├── sender.c/h       # Message sending thread
-│       ├── receiver.c/h     # Message receiving thread
-│       └── packet_handler.c/h # Message processing thread
+│       ├── menu.c/h                # Interactive command interface
+│       ├── sender.c/h              # Message sending thread
+│       ├── receiver.c/h            # Message receiving thread
+│       ├── packet_handler.c/h      # Message processing thread
+│       └── routing.c/h             # Distance vector routing algorithm
 ├── config/
-│   ├── router.config        # Router definitions
-│   └── link.config         # Network topology
-└── Makefile                # Build configuration
+│   ├── router.config               # Router definitions
+│   └── link.config                 # Network topology
+└── Makefile                        # Build configuration
 ```
 
 ## Building
@@ -81,27 +107,36 @@ Example:
 
 ## Running
 
-Start a router instance by specifying its ID:
+Start a router instance by specifying its ID and optional routing timeout:
 
 ```bash
-./net.o -i <router_id>
+./net.o -i <router_id> [-t <timeout_seconds>]
 ```
 
-Where `router_id` is an integer between 1 and 4 (based on the configuration).
+**Parameters:**
+- `-i <router_id>`: Router ID (integer between 1 and 4)
+- `-t <timeout_seconds>`: Routing update interval in seconds (default: 10)
 
-Example:
+**Examples:**
 ```bash
-./net.o -i 1
+./net.o -i 1                    # Start router 1 with default 30s timeout
+./net.o -i 2 -t 10              # Start router 2 with 10s update interval
 ```
 
 ## Usage
 
-Once the program starts, you'll see the router's network connections and an interactive menu:
+Once the program starts, you'll see the router's network connections, routing table, and an interactive menu:
 
 ```
 Connected to Router 1: Host: 127.0.0.1, Port: 25001
 
 -> Linked to Router 2: Host: 127.0.0.1, Port: 25002, Weight: 3
+
+Routing table: 1 2 -1 -1 
+
+[Sender] Waiting for messages to send...
+[Receiver] Waiting for messages on port 25001...
+[Packet Handler] Waiting for messages to handle...
 
 Available commands:
 menu - show this help
@@ -147,7 +182,9 @@ typedef struct Message {
     int type;           // 1 for data, 2 for control
     int source;         // Source router ID
     int destination;    // Destination router ID
-    char payload[100];  // Message content
+    int next_hop;       // Next hop router for routing
+    int hops;           // Number of hops taken
+    char payload[100];  // Message content (or distance vector for control messages)
 } Message;
 ```
 
