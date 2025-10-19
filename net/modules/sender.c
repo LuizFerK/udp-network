@@ -11,12 +11,6 @@
 #include<sys/socket.h>
 
 #define LOG_PREFIX "[Sender]"
-#define BUFLEN 512
-
-static void die(char *s) {
-  perror(s);
-  exit(1);
-}
 
 void* sender(void* arg) {
   Config* config = (Config*)arg;
@@ -40,11 +34,13 @@ void* sender(void* arg) {
     next_hop_addr.sin_port = htons(config->links[message.next_hop].router->port);
 
     if (inet_pton(AF_INET, config->links[message.next_hop].router->host, &next_hop_addr.sin_addr) <= 0) {
-      die("Error converting host to IP address");
+      perror("Error converting host to IP address");
+      exit(1);
     }
 
     if (sendto(config->socket_fd, &message, sizeof(Message) , 0 , (struct sockaddr *) &next_hop_addr, next_hop_addr_len) == -1) {
-      die("Error sending message");
+      perror("Error sending message");
+      exit(1);
     }
 
     char* message_type = message.type == 1 ? "message" : "control message";

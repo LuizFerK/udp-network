@@ -18,15 +18,6 @@ int get_cli_opt(int argc, char *argv[], char *key, int default_value) {
   return value;
 }
 
-void compare_distance_vectors(int* last_distance_vector, int* distance_vector, int* updated) {
-  for (int i = 1; i < ROUTER_COUNT; i++) {
-    if (last_distance_vector[i] != distance_vector[i]) {
-      *updated = 1;
-      break;
-    }
-  }
-}
-
 int update_routing_data(Config* config) {
   int updated = 0;
 
@@ -80,4 +71,13 @@ int update_routing_data(Config* config) {
   }
 
   return updated;
+}
+
+void compare_distance_vectors(int* last_distance_vector, int* distance_vector, int* updated) {
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (last_distance_vector[i] != distance_vector[i]) {
+      *updated = 1;
+      break;
+    }
+  }
 }

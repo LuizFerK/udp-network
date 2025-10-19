@@ -8,6 +8,16 @@
 
 #define LOG_PREFIX "[Routing]"
 
+void* routing(void* arg) {
+  Config* config = (Config*)arg;
+
+  while (1) {
+    update_routing_data(config);
+    send_distance_vector(config, 1);
+    sleep(config->routing.timeout);
+  }
+}
+
 void send_distance_vector(Config* config, int reason) {
   Message message;
   message.type = 2;
@@ -38,14 +48,4 @@ void send_distance_vector(Config* config, int reason) {
     strcat(log_msg, num_str);
   }
   log_message(LOG_PREFIX, log_msg);
-}
-
-void* routing(void* arg) {
-  Config* config = (Config*)arg;
-
-  while (1) {
-    update_routing_data(config);
-    send_distance_vector(config, 1);
-    sleep(config->routing.timeout);
-  }
 }

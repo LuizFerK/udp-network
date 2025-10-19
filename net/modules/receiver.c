@@ -11,12 +11,6 @@
 #include "../ncurses.h"
 
 #define LOG_PREFIX "[Receiver]"
-#define BUFLEN 512
-
-static void die(char *s) {
-  perror(s);
-  exit(1);
-}
 
 void* receiver(void* arg) {
   Config* config = (Config*)arg;
@@ -33,7 +27,8 @@ void* receiver(void* arg) {
     memset(&message, 0, sizeof(Message));
 
     if ((received_bytes = recvfrom(config->socket_fd, &message, sizeof(Message), 0, (struct sockaddr *) &client_addr, &client_addr_len)) == -1) {
-      die("Error receiving data");
+      perror("Error receiving data");
+      exit(1);
     }
       
     log_message(LOG_PREFIX, "Received packet from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));

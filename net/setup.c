@@ -13,6 +13,57 @@
 #include "setup.h"
 #include "ncurses.h"
 
+Config* setup(int id, int routing_timeout) {
+  Config* config = malloc(sizeof(Config));
+  if (config == NULL) {
+    fprintf(stderr, "Error: Failed to allocate memory for config.\n");
+    exit(1);
+  }
+  
+  Router* routers = malloc(sizeof(Router) * ROUTER_COUNT);
+  if (routers == NULL) {
+    fprintf(stderr, "Error: Failed to allocate memory for routers.\n");
+    exit(1);
+  }
+
+  if (id == -1) {
+    fprintf(stderr, "Error: ID is required. Use -i <id>\n");
+    fprintf(stderr, "Usage: ./net.o -i <id>\n");
+    exit(1);
+  }
+
+  if (id <= 0 || id >= ROUTER_COUNT) {
+    fprintf(stderr, "Error: Invalid router ID.\n");
+    exit(1);
+  }
+  
+  setup_routers(routers);
+
+  config->router = routers[id];
+  
+  init_ncurses();
+
+  log_info("Connected to Router %d: Host: %s, Port: %d",
+            config->router.id,
+            config->router.host,
+            config->router.port);
+
+  setup_links(id, config->links, routers);
+
+  setup_udp_socket(config);
+
+  setup_controlled_queue(config, &config->sender, sender);
+  setup_thread(config, &config->receiver_thread_id, receiver);
+  setup_controlled_queue(config, &config->packet_handler, packet_handler);
+
+  config->routing.timeout = routing_timeout;
+  setup_thread(config, &config->routing.thread_id, routing);
+  
+  print_menu_help();
+
+  return config;
+}
+
 void setup_routers(Router routers[ROUTER_COUNT]) {
   FILE *router_file = fopen(ROUTER_CONFIG_FILE, "r");
   if (router_file == NULL) {
@@ -29,23 +80,6 @@ void setup_routers(Router routers[ROUTER_COUNT]) {
   }
 
   fclose(router_file);
-}
-
-void setup_thread(Config* config, pthread_t* thread_id, void* (*func)(void*)) {
-  if (pthread_create(thread_id, NULL, func, config) != 0) {
-    fprintf(stderr, "Error while creating thread.\n");
-    exit(1);
-  }
-}
-
-void setup_controlled_queue(Config* config, ControlledQueue* queue, void* (*func)(void*)) {
-  pthread_mutex_init(&queue->mutex, NULL);
-  sem_init(&queue->semaphore, 0, 0);
-  queue->queue.front = 0;
-  queue->queue.rear = 0;
-  queue->queue.size = 0;
-
-  setup_thread(config, &queue->thread_id, func);
 }
 
 void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT]) {
@@ -99,53 +133,19 @@ void setup_udp_socket(Config* config) {
   }
 }
 
-Config* setup(int id, int routing_timeout) {
-  Config* config = malloc(sizeof(Config));
-  if (config == NULL) {
-    fprintf(stderr, "Error: Failed to allocate memory for config.\n");
+void setup_controlled_queue(Config* config, ControlledQueue* queue, void* (*func)(void*)) {
+  pthread_mutex_init(&queue->mutex, NULL);
+  sem_init(&queue->semaphore, 0, 0);
+  queue->queue.front = 0;
+  queue->queue.rear = 0;
+  queue->queue.size = 0;
+
+  setup_thread(config, &queue->thread_id, func);
+}
+
+void setup_thread(Config* config, pthread_t* thread_id, void* (*func)(void*)) {
+  if (pthread_create(thread_id, NULL, func, config) != 0) {
+    fprintf(stderr, "Error while creating thread.\n");
     exit(1);
   }
-  
-  Router* routers = malloc(sizeof(Router) * ROUTER_COUNT);
-  if (routers == NULL) {
-    fprintf(stderr, "Error: Failed to allocate memory for routers.\n");
-    exit(1);
-  }
-
-  if (id == -1) {
-    fprintf(stderr, "Error: ID is required. Use -i <id>\n");
-    fprintf(stderr, "Usage: ./net.o -i <id>\n");
-    exit(1);
-  }
-
-  if (id <= 0 || id >= ROUTER_COUNT) {
-    fprintf(stderr, "Error: Invalid router ID.\n");
-    exit(1);
-  }
-  
-  setup_routers(routers);
-
-  config->router = routers[id];
-  
-  init_ncurses();
-
-  log_info("Connected to Router %d: Host: %s, Port: %d",
-            config->router.id,
-            config->router.host,
-            config->router.port);
-
-  setup_links(id, config->links, routers);
-
-  setup_udp_socket(config);
-
-  setup_controlled_queue(config, &config->sender, sender);
-  setup_thread(config, &config->receiver_thread_id, receiver);
-  setup_controlled_queue(config, &config->packet_handler, packet_handler);
-
-  config->routing.timeout = routing_timeout;
-  setup_thread(config, &config->routing.thread_id, routing);
-  
-  print_menu_help();
-
-  return config;
 }

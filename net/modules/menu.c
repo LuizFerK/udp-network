@@ -7,6 +7,30 @@
 #include "menu.h"
 #include "sender.h"
 
+void menu(Config* config) {
+  char input[256];
+  int destination;
+  char message[PAYLOAD_SIZE];
+  
+  while (1) {
+    if (get_user_input(input, sizeof(input)) != 0) {
+      break;
+    }
+    
+    if (strncmp(input, "send", 4) == 0) {
+      if (parse_send_command(input, &destination, message)) {
+        send_message(config, destination, message);
+      } else {
+        log_error("Invalid send command format. Use: send -t <destination> -m <message>");
+      }
+    } else if (strcmp(input, "exit") == 0) {
+      break;
+    } else {
+      log_info("Invalid option.");
+    }
+  }
+}
+
 void send_message(Config* config, int destination, char* message_text) {
   Message message;
   message.type = 1;
@@ -81,28 +105,4 @@ int parse_send_command(char* input, int* destination, char* message) {
   }
   
   return found_t && found_m;
-}
-
-void menu(Config* config) {
-  char input[256];
-  int destination;
-  char message[PAYLOAD_SIZE];
-  
-  while (1) {
-    if (get_user_input(input, sizeof(input)) != 0) {
-      break;
-    }
-    
-    if (strncmp(input, "send", 4) == 0) {
-      if (parse_send_command(input, &destination, message)) {
-        send_message(config, destination, message);
-      } else {
-        log_error("Invalid send command format. Use: send -t <destination> -m <message>");
-      }
-    } else if (strcmp(input, "exit") == 0) {
-      break;
-    } else {
-      log_info("Invalid option.");
-    }
-  }
 }
