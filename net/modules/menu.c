@@ -26,7 +26,7 @@ void send_message(Config* config, int destination, char* message_text) {
   message.next_hop = config->routing.routing_table[destination];
   message.hops = 1;
 
-  if (message.next_hop == -1) {
+  if (message.next_hop == INFINITY) {
     printf("%s Destination router is unreachable.\n", INFO_PREFIX);
     return;
   }

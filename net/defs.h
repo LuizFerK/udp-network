@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
+#include <math.h>
 
 #define ROUTER_CONFIG_FILE "config/router.config"
 #define LINK_CONFIG_FILE "config/link.config"
@@ -53,6 +54,7 @@ typedef struct ControlledQueue {
 
 typedef struct Routing {
   int routing_table[ROUTER_COUNT];
+  int last_distance_vector[ROUTER_COUNT];
   pthread_t thread_id;
   int timeout;
 } Routing;

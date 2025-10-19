@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "packet_handler.h"
+#include "routing.h"
+#include "../helpers.h"
 
 #define LOG_PREFIX "[Packet Handler]"
 
@@ -13,6 +15,10 @@ void handle_control_message(Config* config, Message message) {
   printf("%s Distance vector: ", LOG_PREFIX);
   int* distance_vector = (int*)message.payload;
   for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (distance_vector[i] == (int)INFINITY) {
+      printf("∞ ");
+      continue;
+    }
     printf("%d ", distance_vector[i]);
   }
   
@@ -21,6 +27,10 @@ void handle_control_message(Config* config, Message message) {
   memcpy(config->links[message.source].distance_vector, distance_vector, ROUTER_COUNT * sizeof(int));
   
   printf("\n");
+
+  if (update_routing_data(config) == 1) {
+    send_distance_vector(config, 2);
+  }
 }
 
 void* packet_handler(void* arg) {

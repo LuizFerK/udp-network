@@ -44,7 +44,7 @@ void* receiver(void* arg) {
     }
 
     int next_hop = config->routing.routing_table[message.destination];
-    if (next_hop == -1) {
+    if (next_hop == INFINITY) {
       printf("%s Next hop router is unreachable.\n", INFO_PREFIX);
       continue;
     }
