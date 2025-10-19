@@ -4,6 +4,7 @@
 #include "sender.h"
 #include "routing.h"
 #include "../helpers.h"
+#include "../ncurses.h"
 
 #define LOG_PREFIX "[Routing]"
 
@@ -23,15 +24,20 @@ void send_distance_vector(Config* config, int reason) {
   }
 
   char* reason_str = reason == 1 ? "TIMEOUT" : "UPDATE";
-  printf("%s Sending distance vector to neighbors (%s): ", LOG_PREFIX, reason_str);
+  char log_msg[256] = "Sending distance vector to neighbors (";
+  strcat(log_msg, reason_str);
+  strcat(log_msg, "): ");
+  
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (config->routing.last_distance_vector[i] == (int)INFINITY) {
-      printf("∞ ");
+      strcat(log_msg, "∞ ");
       continue;
     }
-    printf("%d ", config->routing.last_distance_vector[i]);
+    char num_str[16];
+    snprintf(num_str, sizeof(num_str), "%d ", config->routing.last_distance_vector[i]);
+    strcat(log_msg, num_str);
   }
-  printf("\n");
+  log_message(LOG_PREFIX, log_msg);
 }
 
 void* routing(void* arg) {

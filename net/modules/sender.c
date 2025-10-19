@@ -1,6 +1,7 @@
 #include <semaphore.h>
 #include <stdio.h>
 #include "sender.h"
+#include "../ncurses.h"
 
 #include<string.h> //memset
 #include<stdlib.h> //exit(0);
@@ -25,7 +26,7 @@ void* sender(void* arg) {
 
   next_hop_addr.sin_family = AF_INET;
 
-  printf("%s Waiting for messages to send...\n", LOG_PREFIX);
+  log_message(LOG_PREFIX, "Waiting for messages to send...");
   
   while (1) {
     sem_wait(&config->sender.semaphore);
@@ -47,7 +48,7 @@ void* sender(void* arg) {
     }
 
     char* message_type = message.type == 1 ? "message" : "control message";
-    printf("%s Sent %s to Router %d\n", LOG_PREFIX, message_type, message.next_hop);
+    log_message(LOG_PREFIX, "Sent %s to Router %d", message_type, message.next_hop);
   }
 }
 

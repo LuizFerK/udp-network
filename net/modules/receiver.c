@@ -8,6 +8,7 @@
 #include "packet_handler.h"
 #include "sender.h"
 #include "receiver.h"
+#include "../ncurses.h"
 
 #define LOG_PREFIX "[Receiver]"
 #define BUFLEN 512
@@ -26,7 +27,7 @@ void* receiver(void* arg) {
   struct sockaddr_in client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
   
-  printf("%s Waiting for messages on port %d...\n", LOG_PREFIX, config->router.port);
+  log_message(LOG_PREFIX, "Waiting for messages on port %d...", config->router.port);
   
   while (1) {
     memset(&message, 0, sizeof(Message));
@@ -35,8 +36,8 @@ void* receiver(void* arg) {
       die("Error receiving data");
     }
       
-    printf("%s Received packet from %s:%d\n", LOG_PREFIX, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-    printf("%s Message type: %d, source: %d, destination: %d\n", LOG_PREFIX, message.type, message.source, message.destination);
+    log_message(LOG_PREFIX, "Received packet from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    log_message(LOG_PREFIX, "Message type: %d, source: %d, destination: %d", message.type, message.source, message.destination);
 
     if (message.destination == config->router.id) {
       packet_handler_put_message(config, message);
@@ -45,7 +46,7 @@ void* receiver(void* arg) {
 
     int next_hop = config->routing.routing_table[message.destination];
     if (next_hop == INFINITY) {
-      printf("%s Next hop router is unreachable.\n", INFO_PREFIX);
+      log_info("Next hop router is unreachable.");
       continue;
     }
 

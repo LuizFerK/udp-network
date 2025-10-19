@@ -1,10 +1,11 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99
+CFLAGS = -Wall -Wextra -std=c99 $(shell ncurses-config --cflags)
 TARGET = net.o
 
 SOURCES = main.c \
           net/helpers.c \
           net/setup.c \
+          net/ncurses.c \
           net/modules/menu.c \
           net/modules/receiver.c \
           net/modules/sender.c \
@@ -14,7 +15,7 @@ SOURCES = main.c \
 OBJECTS = $(SOURCES:.c=.o)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(TARGET) -lpthread
+	$(CC) $(OBJECTS) -o $(TARGET) -lpthread $(shell ncurses-config --libs)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "../helpers.h"
+#include "../ncurses.h"
 #include "menu.h"
 #include "sender.h"
 
@@ -14,20 +15,20 @@ void send_message(Config* config, int destination, char* message_text) {
   message.destination = destination;
 
   if (message.destination < 1 || message.destination >= ROUTER_COUNT) {
-    printf("%s Invalid destination router.\n", INFO_PREFIX);
+    log_info("Invalid destination router.");
     return;
   }
 
   if (message.source == message.destination) {
-    printf("%s Source and destination cannot be the same.\n", INFO_PREFIX);
+    log_info("Source and destination cannot be the same.");
     return;
   }
   
   message.next_hop = config->routing.routing_table[destination];
   message.hops = 1;
 
-  if (message.next_hop == INFINITY) {
-    printf("%s Destination router is unreachable.\n", INFO_PREFIX);
+  if (message.next_hop == (int)INFINITY) {
+    log_info("Router %d is unreachable.", destination);
     return;
   }
 
@@ -103,42 +104,29 @@ void cleanup(Config* config) {
   free(config);
 }
 
-void print_menu() {
-  printf("\nAvailable commands:\n");
-  printf("menu - show this help\n");
-  printf("send -t <destination> -m '<message>' - send a message\n");
-  printf("exit - exit the program\n");
-  printf("\n-------------------------------\n\n");
-}
-
 void menu(Config* config) {
   char input[256];
   int destination;
   char message[PAYLOAD_SIZE];
   
-  print_menu();
-
   while (1) {
-    if (fgets(input, sizeof(input), stdin) == NULL) {
+    if (get_user_input(input, sizeof(input)) != 0) {
       break;
     }
     
-    input[strcspn(input, "\n")] = 0;
-    
-    if (strcmp(input, "menu") == 0) {
-      print_menu();
-    } else if (strncmp(input, "send", 4) == 0) {
+    if (strncmp(input, "send", 4) == 0) {
       if (parse_send_command(input, &destination, message)) {
         send_message(config, destination, message);
       } else {
-        printf("%s Invalid send command format. Use: send -t <destination> -m <message>\n", ERROR_PREFIX);
+        log_error("Invalid send command format. Use: send -t <destination> -m <message>");
       }
     } else if (strcmp(input, "exit") == 0) {
       break;
     } else {
-      printf("%s Invalid option.\n", INFO_PREFIX);
+      log_info("Invalid option.");
     }
   }
 
+  cleanup_ncurses();
   cleanup(config);
 }

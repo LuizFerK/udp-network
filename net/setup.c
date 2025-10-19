@@ -11,6 +11,7 @@
 #include "modules/routing.h"
 #include "defs.h"
 #include "setup.h"
+#include "ncurses.h"
 
 void setup_routers(Router routers[ROUTER_COUNT]) {
   FILE *router_file = fopen(ROUTER_CONFIG_FILE, "r");
@@ -71,14 +72,12 @@ void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT])
 
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (links[i].router == NULL) continue;
-    printf("-> Linked to Router %d: Host: %s, Port: %d, Weight: %d\n",
-           links[i].router->id,
-           links[i].router->host,
-           links[i].router->port,
-           links[i].weight);
+    log_info("-> Linked to Router %d: Host: %s, Port: %d, Weight: %d",
+             links[i].router->id,
+             links[i].router->host,
+             links[i].router->port,
+             links[i].weight);
   }
-
-  printf("\n");
 }
 
 void setup_udp_socket(Config* config) {
@@ -127,10 +126,17 @@ Config* setup(int id, int routing_timeout) {
   setup_routers(routers);
 
   config->router = routers[id];
-  printf("Connected to Router %d: Host: %s, Port: %d\n\n",
-         config->router.id,
-         config->router.host,
-         config->router.port);
+  
+  // Initialize ncurses UI
+  if (init_ncurses() != 0) {
+    fprintf(stderr, "Failed to initialize ncurses UI\n");
+    exit(1);
+  }
+
+  log_info("Connected to Router %d: Host: %s, Port: %d",
+            config->router.id,
+            config->router.host,
+            config->router.port);
 
   setup_links(id, config->links, routers);
 
@@ -142,6 +148,8 @@ Config* setup(int id, int routing_timeout) {
 
   config->routing.timeout = routing_timeout;
   setup_thread(config, &config->routing.thread_id, routing);
+  
+  print_menu_help();
 
   return config;
 }

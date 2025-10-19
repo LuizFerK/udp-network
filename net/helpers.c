@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include "helpers.h"
+#include "ncurses.h"
 
 int get_cli_opt(int argc, char *argv[], char *key, int default_value) {
   int value = default_value;
@@ -15,22 +16,6 @@ int get_cli_opt(int argc, char *argv[], char *key, int default_value) {
   }
 
   return value;
-}
-
-void get_int_option(int* option) {
-  if (scanf("%d", option) != 1) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-    *option = -1;
-  }
-}
-
-void get_string_option(char* option) {
-  if (scanf("%s", option) != 1) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-    *option = '\0';
-  }
 }
 
 void compare_distance_vectors(int* last_distance_vector, int* distance_vector, int* updated) {
@@ -81,15 +66,17 @@ int update_routing_data(Config* config) {
     memcpy(config->routing.last_distance_vector, distance_vector, ROUTER_COUNT * sizeof(int));
     memcpy(config->routing.routing_table, routing_table, ROUTER_COUNT * sizeof(int));
 
-    printf("%s Updated routing table: ", INFO_PREFIX);
+    char log_msg[256] = "Updated routing table: ";
     for (int i = 1; i < ROUTER_COUNT; i++) {
       if (routing_table[i] == (int)INFINITY) {
-        printf("∞ ");
+        strcat(log_msg, "∞ ");
         continue;
       }
-      printf("%d ", routing_table[i]);
+      char num_str[16];
+      snprintf(num_str, sizeof(num_str), "%d ", routing_table[i]);
+      strcat(log_msg, num_str);
     }
-    printf("\n");
+    log_info(log_msg);
   }
 
   return updated;
