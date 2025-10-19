@@ -6,16 +6,19 @@
 #include "menu.h"
 #include "sender.h"
 
+// Main interactive menu loop for user commands
 void menu(Config* config) {
   char input[256];
   int destination;
   char message[PAYLOAD_SIZE];
   
   while (1) {
+    // Get user input from ncurses interface
     if (get_user_input(input, sizeof(input)) != 0) {
       break;
     }
     
+    // Handle send command
     if (strncmp(input, "send", 4) == 0) {
       if (parse_send_command(input, &destination, message)) {
         send_message(config, destination, message);
@@ -23,6 +26,7 @@ void menu(Config* config) {
         log_error("Invalid send command format. Use: send -t <destination> -m <message>");
       }
     } else if (strcmp(input, "status") == 0) {
+      // Display current router status and routing information
       print_router_status(config);
     } else if (strcmp(input, "exit") == 0) {
       break;
@@ -32,42 +36,50 @@ void menu(Config* config) {
   }
 }
 
+// Create and send a message to another router
 void send_message(Config* config, int destination, char* message_text) {
   Message message;
-  message.type = 1;
+  message.type = 1;  // Data message
   message.source = config->router.id;
   message.destination = destination;
 
+  // Validate destination router ID
   if (message.destination < 1 || message.destination >= ROUTER_COUNT) {
     log_info("Invalid destination router.");
     return;
   }
 
+  // Prevent sending to self
   if (message.source == message.destination) {
     log_info("Source and destination cannot be the same.");
     return;
   }
   
+  // Get next hop from routing table
   message.next_hop = config->routing.routing_table[destination];
   message.hops = 1;
 
+  // Check if destination is reachable
   if (message.next_hop == (int)INFINITY) {
     log_info("Router %d is unreachable.", destination);
     return;
   }
 
+  // Copy message text to payload
   strncpy(message.payload, message_text, PAYLOAD_SIZE - 1);
   message.payload[PAYLOAD_SIZE - 1] = '\0';
 
+  // Queue message for transmission
   sender_put_message(config, message);
 }
 
+// Display current router status and routing information
 void print_router_status(Config* config) {
   char routing_table_str[128] = "";
   char distance_vector_str[128] = "";
   char self_distance_vector_str[128] = "";
   
-  // Routing table
+  // Build routing table string (next hops for each destination)
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (config->routing.routing_table[i] == (int)INFINITY) {
       strcat(routing_table_str, "∞ ");
@@ -78,7 +90,7 @@ void print_router_status(Config* config) {
     strcat(routing_table_str, num_str);
   }
 
-  // Last calculated distance vector
+  // Build last calculated distance vector string
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (config->routing.last_distance_vector[i] == (int)INFINITY) {
       strcat(distance_vector_str, "∞ ");
@@ -89,7 +101,7 @@ void print_router_status(Config* config) {
     strcat(distance_vector_str, num_str);
   }
 
-  // Self distance vector
+  // Build self distance vector string (direct link costs)
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (i == config->router.id) {
       strcat(self_distance_vector_str, "0 ");
@@ -102,12 +114,13 @@ void print_router_status(Config* config) {
     }
   }
 
+  // Display router status information
   log_info("Router %d status:", config->router.id);
   log_info("Routing table: %s", routing_table_str);
   log_info("Last calculated distance vector: %s", distance_vector_str);
   log_info("Self distance vector: %s", self_distance_vector_str);
 
-  // Distance vectors from neighbors
+  // Display distance vectors received from neighbors
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (config->links[i].expires_at == 0 || config->links[i].expires_at < time(NULL)) continue;
     char distance_vector_str[128] = "";
@@ -125,31 +138,37 @@ void print_router_status(Config* config) {
   }
 }
 
+// Parse send command: "send -t <destination> -m '<message>'"
 int parse_send_command(char* input, int* destination, char* message) {
   char* token;
   char* saveptr;
   int found_t = 0, found_m = 0;
   
+  // Get first token (should be "send")
   token = strtok_r(input, " ", &saveptr);
   
   if (strcmp(token, "send") != 0) {
     return 0;
   }
   
+  // Parse command arguments
   while ((token = strtok_r(NULL, " ", &saveptr)) != NULL) {
     if (strcmp(token, "-t") == 0) {
+      // Parse destination router ID
       token = strtok_r(NULL, " ", &saveptr);
       if (token == NULL) return 0;
       *destination = atoi(token);
       found_t = 1;
     } else if (strcmp(token, "-m") == 0) {
+      // Parse message content
       token = strtok_r(NULL, " ", &saveptr);
       if (token == NULL) return 0;
       
-      // supports quoted messages to handle spaces in the message
+      // Handle quoted messages to support spaces in message text
       if (token[0] == '\'') {
         strncpy(message, token + 1, PAYLOAD_SIZE);
         
+        // Continue reading until closing quote
         while ((token = strtok_r(NULL, " ", &saveptr)) != NULL) {
           if (token[strlen(token) - 1] == '\'') {
             token[strlen(token) - 1] = '\0';
@@ -162,6 +181,7 @@ int parse_send_command(char* input, int* destination, char* message) {
           }
         }
       } else {
+        // Simple message without quotes
         strncpy(message, token, PAYLOAD_SIZE);
       }
       found_m = 1;
