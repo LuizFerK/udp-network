@@ -127,11 +127,7 @@ Config* setup(int id, int routing_timeout) {
 
   config->router = routers[id];
   
-  // Initialize ncurses UI
-  if (init_ncurses() != 0) {
-    fprintf(stderr, "Failed to initialize ncurses UI\n");
-    exit(1);
-  }
+  init_ncurses();
 
   log_info("Connected to Router %d: Host: %s, Port: %d",
             config->router.id,

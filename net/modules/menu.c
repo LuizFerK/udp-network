@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include "../helpers.h"
 #include "../ncurses.h"
 #include "menu.h"
@@ -84,26 +83,6 @@ int parse_send_command(char* input, int* destination, char* message) {
   return found_t && found_m;
 }
 
-void cleanup(Config* config) {
-  pthread_cancel(config->sender.thread_id);
-  pthread_cancel(config->packet_handler.thread_id);
-  pthread_cancel(config->receiver_thread_id);
-  
-  pthread_join(config->sender.thread_id, NULL);
-  pthread_join(config->packet_handler.thread_id, NULL);
-  pthread_join(config->receiver_thread_id, NULL);
-
-  pthread_mutex_destroy(&config->sender.mutex);
-  pthread_mutex_destroy(&config->packet_handler.mutex);
-
-  sem_destroy(&config->sender.semaphore);
-  sem_destroy(&config->packet_handler.semaphore);
-
-  close(config->socket_fd);
-
-  free(config);
-}
-
 void menu(Config* config) {
   char input[256];
   int destination;
@@ -126,7 +105,4 @@ void menu(Config* config) {
       log_info("Invalid option.");
     }
   }
-
-  cleanup_ncurses();
-  cleanup(config);
 }

@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <ncurses.h>
 #include <time.h>
 #include <math.h>
 

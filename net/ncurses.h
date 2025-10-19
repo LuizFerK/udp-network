@@ -1,34 +1,23 @@
-#include <ncurses.h>
 #include <pthread.h>
-#include <string.h>
-#include <stdarg.h>
+#include "defs.h"
 
-// Window dimensions and layout
 #define LOG_BUFFER_SIZE 1000
+#define LOG_WINDOW_HEIGHT (LINES - 2) * 2 / 3
+#define MENU_WINDOW_HEIGHT (LINES - 2) - LOG_WINDOW_HEIGHT
 
-// Thread-safe logging structure
-typedef struct {
+typedef struct UI {
     WINDOW* log_window;
     WINDOW* menu_window;
-    char log_buffer[LOG_BUFFER_SIZE][1024];
+    pthread_mutex_t ui_mutex;
     int log_count;
     int log_start;
-    pthread_mutex_t log_mutex;
-    int initialized;
-    int log_window_height;
-    int menu_window_height;
-} NCursesUI;
+    char log_buffer[LOG_BUFFER_SIZE][1024];
+  } UI;
 
-// Global UI instance
-extern NCursesUI* ui;
-
-// Function declarations
-int init_ncurses();
-void cleanup_ncurses();
+void init_ncurses();
 void log_message(const char* prefix, const char* format, ...);
 void log_info(const char* format, ...);
 void log_error(const char* format, ...);
-void refresh_menu_window();
-void refresh_log_window();
 void print_menu_help();
 int get_user_input(char* input, int max_len);
+void cleanup_ncurses();
