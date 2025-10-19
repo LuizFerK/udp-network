@@ -18,12 +18,14 @@ int get_cli_opt(int argc, char *argv[], char *key, int default_value) {
   return value;
 }
 
+// Distributed Bellman-Ford algorithm
 int update_routing_data(Config* config) {
   int updated = 0;
 
   int routing_table[ROUTER_COUNT];
   int distance_vector[ROUTER_COUNT];
 
+  // Initialize routing table and distance vector based on neighbors' weights
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (config->links[i].router == NULL || (config->links[i].expires_at == 0 || config->links[i].expires_at < time(NULL))) {
       routing_table[i] = (int)INFINITY;
@@ -34,6 +36,7 @@ int update_routing_data(Config* config) {
     }
   }
 
+  // Update routing table and distance vector based on neighbors distance vectors
   for (int i = 1; i < ROUTER_COUNT; i++) {
     if (config->links[i].expires_at == 0 || config->links[i].expires_at < time(NULL)) continue;
 
@@ -48,6 +51,7 @@ int update_routing_data(Config* config) {
     }
   }
 
+  // Update routing table and distance vector for the current router
   routing_table[config->router.id] = config->router.id;
   distance_vector[config->router.id] = 0;
 
@@ -57,6 +61,12 @@ int update_routing_data(Config* config) {
     memcpy(config->routing.last_distance_vector, distance_vector, ROUTER_COUNT * sizeof(int));
     memcpy(config->routing.routing_table, routing_table, ROUTER_COUNT * sizeof(int));
 
+    // Get current timestamp
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    char timestamp[32];
+    strftime(timestamp, sizeof(timestamp), " (%Y-%m-%d %H:%M:%S)", tm_info);
+    
     char log_msg[256] = "Updated routing table: ";
     for (int i = 1; i < ROUTER_COUNT; i++) {
       if (routing_table[i] == (int)INFINITY) {
@@ -67,6 +77,7 @@ int update_routing_data(Config* config) {
       snprintf(num_str, sizeof(num_str), "%d ", routing_table[i]);
       strcat(log_msg, num_str);
     }
+    strcat(log_msg, timestamp);
     log_info(log_msg);
   }
 

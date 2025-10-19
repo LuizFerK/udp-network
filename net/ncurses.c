@@ -102,8 +102,9 @@ void print_menu_help() {
   werase(ui->menu_window);
   mvwprintw(ui->menu_window, 0, 0, "Available commands:");
   mvwprintw(ui->menu_window, 1, 0, "send -t <destination> -m '<message>' - send message");
-  mvwprintw(ui->menu_window, 2, 0, "exit - exit the program");
-  mvwprintw(ui->menu_window, 3, 0, "Command: ");
+  mvwprintw(ui->menu_window, 2, 0, "status - show current router status");
+  mvwprintw(ui->menu_window, 3, 0, "exit - exit the program");
+  mvwprintw(ui->menu_window, 4, 0, "Command: ");
   wrefresh(ui->menu_window);
 
   pthread_mutex_unlock(&ui->ui_mutex);
@@ -111,14 +112,14 @@ void print_menu_help() {
 
 int get_user_input(char* input, int max_len) {
   // Position cursor at the end of "Command: " line
-  wmove(ui->menu_window, 3, 9);
+  wmove(ui->menu_window, 4, 9);
   wrefresh(ui->menu_window);
   
   echo();
   int result = wgetnstr(ui->menu_window, input, max_len - 1);
   noecho();
   
-  wmove(ui->menu_window, 3, 9);
+  wmove(ui->menu_window, 4, 9);
   wclrtoeol(ui->menu_window);
   wrefresh(ui->menu_window);
   

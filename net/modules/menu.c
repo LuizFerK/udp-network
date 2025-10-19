@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +22,8 @@ void menu(Config* config) {
       } else {
         log_error("Invalid send command format. Use: send -t <destination> -m <message>");
       }
+    } else if (strcmp(input, "status") == 0) {
+      print_router_status(config);
     } else if (strcmp(input, "exit") == 0) {
       break;
     } else {
@@ -59,6 +60,69 @@ void send_message(Config* config, int destination, char* message_text) {
   message.payload[PAYLOAD_SIZE - 1] = '\0';
 
   sender_put_message(config, message);
+}
+
+void print_router_status(Config* config) {
+  char routing_table_str[128] = "";
+  char distance_vector_str[128] = "";
+  char self_distance_vector_str[128] = "";
+  
+  // Routing table
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (config->routing.routing_table[i] == (int)INFINITY) {
+      strcat(routing_table_str, "∞ ");
+      continue;
+    }
+    char num_str[16];
+    snprintf(num_str, sizeof(num_str), "%d ", config->routing.routing_table[i]);
+    strcat(routing_table_str, num_str);
+  }
+
+  // Last calculated distance vector
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (config->routing.last_distance_vector[i] == (int)INFINITY) {
+      strcat(distance_vector_str, "∞ ");
+      continue;
+    }
+    char num_str[16];
+    snprintf(num_str, sizeof(num_str), "%d ", config->routing.last_distance_vector[i]);
+    strcat(distance_vector_str, num_str);
+  }
+
+  // Self distance vector
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (i == config->router.id) {
+      strcat(self_distance_vector_str, "0 ");
+    } else if (config->links[i].router == NULL || (config->links[i].expires_at == 0 || config->links[i].expires_at < time(NULL))) {
+      strcat(self_distance_vector_str, "∞ ");
+    } else {
+      char num_str[16];
+      snprintf(num_str, sizeof(num_str), "%d ", config->links[i].weight);
+      strcat(self_distance_vector_str, num_str);
+    }
+  }
+
+  log_info("Router %d status:", config->router.id);
+  log_info("Routing table: %s", routing_table_str);
+  log_info("Last calculated distance vector: %s", distance_vector_str);
+  log_info("Self distance vector: %s", self_distance_vector_str);
+
+  // Distance vectors from neighbors
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    if (config->links[i].expires_at == 0 || config->links[i].expires_at < time(NULL)) continue;
+    char distance_vector_str[128] = "";
+
+    for (int j = 1; j < ROUTER_COUNT; j++) {
+      if (config->links[i].distance_vector[j] == (int)INFINITY) {
+        strcat(distance_vector_str, "∞ ");
+        continue;
+      }
+      char num_str[16];
+      snprintf(num_str, sizeof(num_str), "%d ", config->links[i].distance_vector[j]);
+      strcat(distance_vector_str, num_str);
+    }
+    log_info("Distance vector from Router %d: %s", i, distance_vector_str);
+  }
 }
 
 int parse_send_command(char* input, int* destination, char* message) {

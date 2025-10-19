@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "packet_handler.h"
-#include "sender.h"
 #include "receiver.h"
 #include "../ncurses.h"
 
@@ -34,19 +33,6 @@ void* receiver(void* arg) {
     log_message(LOG_PREFIX, "Received packet from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
     log_message(LOG_PREFIX, "Message type: %d, source: %d, destination: %d", message.type, message.source, message.destination);
 
-    if (message.destination == config->router.id) {
-      packet_handler_put_message(config, message);
-      continue;
-    }
-
-    int next_hop = config->routing.routing_table[message.destination];
-    if (next_hop == INFINITY) {
-      log_info("Next hop router is unreachable.");
-      continue;
-    }
-
-    message.next_hop = next_hop;
-    message.hops = message.hops + 1;
-    sender_put_message(config, message);
+    packet_handler_put_message(config, message);
   }
 }

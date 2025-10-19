@@ -3,6 +3,7 @@
 #include <string.h>
 #include "packet_handler.h"
 #include "routing.h"
+#include "sender.h"
 #include "../helpers.h"
 #include "../ncurses.h"
 
@@ -21,10 +22,25 @@ void* packet_handler(void* arg) {
     config->packet_handler.queue.size--;
     pthread_mutex_unlock(&config->packet_handler.mutex);
 
-    char* message_type = message.type == 1 ? "message" : "control message";
-    log_message(LOG_PREFIX, "Received %s from Router %d", message_type, message.source);
-    
-    message.type == 1 ? handle_message(message) : handle_control_message(config, message);
+    if (message.destination == config->router.id) {
+      char* message_type = message.type == 1 ? "message" : "control message";
+      log_message(LOG_PREFIX, "Received %s from Router %d", message_type, message.source);
+      
+      message.type == 1 ? handle_message(message) : handle_control_message(config, message);
+      continue;
+    }
+
+    int next_hop = config->routing.routing_table[message.destination];
+    if (next_hop == INFINITY) {
+      log_message(LOG_PREFIX, "Next hop router is unreachable.");
+      continue;
+    }
+
+    log_message(LOG_PREFIX, "Forwarding message to Router %d", next_hop);
+
+    message.next_hop = next_hop;
+    message.hops = message.hops + 1;
+    sender_put_message(config, message);
   }
 }
 
