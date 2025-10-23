@@ -37,7 +37,7 @@ void* packet_handler(void* arg) {
 
     // Message needs to be forwarded - get next hop from routing table
     int next_hop = config->routing.routing_table[message.destination];
-    if (next_hop == INFINITY) {
+    if (next_hop == config->infinity) {
       log_message(LOG_PREFIX, "Next hop router is unreachable.");
       continue;
     }
@@ -76,7 +76,7 @@ void handle_control_message(Config* config, Message message) {
   
   // Build distance vector string for logging
   for (int i = 1; i < ROUTER_COUNT; i++) {
-    if (distance_vector[i] == (int)INFINITY) {
+    if (distance_vector[i] == config->infinity) {
       strcat(vector_str, "∞ ");
       continue;
     }

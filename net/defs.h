@@ -5,7 +5,6 @@
 #include <semaphore.h>
 #include <ncurses.h>
 #include <time.h>
-#include <math.h>
 
 // Configuration file paths
 #define ROUTER_CONFIG_FILE "config/router.config"
@@ -79,6 +78,7 @@ typedef struct Config {
   ControlledQueue packet_handler;  // Incoming message processing queue
   pthread_t receiver_thread_id;    // UDP receiver thread
   int socket_fd;                   // UDP socket file descriptor
+  int infinity;                    // Infinity value
 } Config;
 
 #endif

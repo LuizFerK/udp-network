@@ -60,7 +60,7 @@ void send_message(Config* config, int destination, char* message_text) {
   message.hops = 1;
 
   // Check if destination is reachable
-  if (message.next_hop == (int)INFINITY) {
+  if (message.next_hop == config->infinity) {
     log_info("Router %d is unreachable.", destination);
     return;
   }
@@ -81,7 +81,7 @@ void print_router_status(Config* config) {
   
   // Build routing table string (next hops for each destination)
   for (int i = 1; i < ROUTER_COUNT; i++) {
-    if (config->routing.routing_table[i] == (int)INFINITY) {
+    if (config->routing.routing_table[i] == config->infinity) {
       strcat(routing_table_str, "∞ ");
       continue;
     }
@@ -92,7 +92,7 @@ void print_router_status(Config* config) {
 
   // Build last calculated distance vector string
   for (int i = 1; i < ROUTER_COUNT; i++) {
-    if (config->routing.last_distance_vector[i] == (int)INFINITY) {
+    if (config->routing.last_distance_vector[i] == config->infinity) {
       strcat(distance_vector_str, "∞ ");
       continue;
     }
@@ -126,7 +126,7 @@ void print_router_status(Config* config) {
     char distance_vector_str[128] = "";
 
     for (int j = 1; j < ROUTER_COUNT; j++) {
-      if (config->links[i].distance_vector[j] == (int)INFINITY) {
+      if (config->links[i].distance_vector[j] == config->infinity) {
         strcat(distance_vector_str, "∞ ");
         continue;
       }

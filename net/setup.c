@@ -58,6 +58,9 @@ Config* setup(int id, int routing_timeout) {
   // Setup network topology links
   setup_links(id, config->links, routers);
 
+  // Calculate and display graph diameter
+  set_infinity_with_graph_diameter(config);
+
   // Create and bind UDP socket
   setup_udp_socket(config);
 
@@ -131,6 +134,66 @@ void setup_links(int id, Link links[ROUTER_COUNT], Router routers[ROUTER_COUNT])
              links[i].router->port,
              links[i].weight);
   }
+}
+
+// Calculate and print the diameter of the network graph
+void set_infinity_with_graph_diameter(Config* config) {
+  // Initialize distance matrix with infinity values
+  int dist[ROUTER_COUNT][ROUTER_COUNT];
+  const int INF = 999999; // Use a large integer instead of floating-point INFINITY
+  
+  // Initialize distance matrix
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    for (int j = 1; j < ROUTER_COUNT; j++) {
+      if (i == j) {
+        dist[i][j] = 0; // Distance to self is 0
+      } else {
+        dist[i][j] = INF; // Initialize with infinity
+      }
+    }
+  }
+  
+  // Read complete network topology from links.config file
+  FILE *link_file = fopen(LINK_CONFIG_FILE, "r");
+  if (link_file == NULL) {
+    fprintf(stderr, "Error while opening link config file for diameter calculation.\n");
+    exit(1);
+  }
+
+  // Parse link configuration and set direct link weights
+  int source, dest, weight;
+  while (fscanf(link_file, "%d %d %d", &source, &dest, &weight) == 3) {
+    // Set bidirectional link weights (undirected graph)
+    dist[source][dest] = weight;
+    dist[dest][source] = weight;
+  }
+
+  fclose(link_file);
+  
+  // Floyd-Warshall algorithm to find shortest paths
+  for (int k = 1; k < ROUTER_COUNT; k++) {
+    for (int i = 1; i < ROUTER_COUNT; i++) {
+      for (int j = 1; j < ROUTER_COUNT; j++) {
+        if (dist[i][k] + dist[k][j] < dist[i][j]) {
+          dist[i][j] = dist[i][k] + dist[k][j];
+        }
+      }
+    }
+  }
+  
+  // Find the diameter (maximum shortest path)
+  int diameter = 0;
+  for (int i = 1; i < ROUTER_COUNT; i++) {
+    for (int j = 1; j < ROUTER_COUNT; j++) {
+      if (i != j && dist[i][j] != INF && dist[i][j] > diameter) {
+        diameter = dist[i][j];
+      }
+    }
+  }
+  
+  // Print the diameter
+  log_info("Graph diameter: %d", diameter);
+  config->infinity = diameter + 1;
 }
 
 // Create and bind UDP socket for network communication

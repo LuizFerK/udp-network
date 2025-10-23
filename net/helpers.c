@@ -31,8 +31,8 @@ int update_routing_data(Config* config) {
   for (int i = 1; i < ROUTER_COUNT; i++) {
     // Check if link exists and hasn't expired
     if (config->links[i].router == NULL || (config->links[i].expires_at == 0 || config->links[i].expires_at < time(NULL))) {
-      routing_table[i] = (int)INFINITY;
-      distance_vector[i] = (int)INFINITY;
+      routing_table[i] = config->infinity;
+      distance_vector[i] = config->infinity;
     } else {
       routing_table[i] = i;  // Direct route through neighbor
       distance_vector[i] = config->links[i].weight;  // Direct link cost
@@ -46,7 +46,7 @@ int update_routing_data(Config* config) {
 
     // Check each destination through this neighbor
     for (int j = 1; j < ROUTER_COUNT; j++) {
-      if (config->links[i].distance_vector[j] == (int)INFINITY) continue;
+      if (config->links[i].distance_vector[j] >= config->infinity) continue;
 
       // Calculate cost: link weight + neighbor's distance to destination
       int weight = config->links[i].weight + config->links[i].distance_vector[j];
@@ -77,7 +77,7 @@ int update_routing_data(Config* config) {
     
     char log_msg[256] = "Updated routing table: ";
     for (int i = 1; i < ROUTER_COUNT; i++) {
-      if (routing_table[i] == (int)INFINITY) {
+      if (routing_table[i] == config->infinity) {
         strcat(log_msg, "∞ ");
         continue;
       }

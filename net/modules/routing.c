@@ -50,7 +50,7 @@ void send_distance_vector(Config* config, int reason) {
   strcat(log_msg, "): ");
   
   for (int i = 1; i < ROUTER_COUNT; i++) {
-    if (config->routing.last_distance_vector[i] == (int)INFINITY) {
+    if (config->routing.last_distance_vector[i] == config->infinity) {
       strcat(log_msg, "∞ ");
       continue;
     }
