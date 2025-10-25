@@ -23,12 +23,13 @@ A multi-threaded network simulation that implements distributed routing using th
 - Bellman-Ford distance vector algorithm
 - Periodic distance vector updates to neighbors
 - Automatic route convergence and link timeout detection
+- **Count to Infinity Workaround**: Uses graph diameter + 1 as infinity value to prevent infinite loops
 
 ## Building
 
 ```bash
 make                    # Compile the project
-make clean             # Remove build artifacts
+make clean              # Remove build artifacts
 ```
 
 **Requirements:**
