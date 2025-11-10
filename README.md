@@ -35,6 +35,37 @@ make clean              # Remove build artifacts
 **Requirements:**
 - GCC with C99 support
 - Linux/Unix environment
+- NCurses lib
+
+### Installing ncurses
+
+**Debian/Ubuntu:**
+```bash
+sudo apt-get update
+sudo apt-get install libncurses5-dev libncursesw5-dev
+```
+
+**Fedora/RHEL/CentOS:**
+```bash
+sudo dnf install ncurses-devel
+# or for older versions:
+sudo yum install ncurses-devel
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S ncurses
+```
+
+**macOS (using Homebrew):**
+```bash
+brew install ncurses
+```
+
+After installation, verify ncurses is available:
+```bash
+ncurses-config --version
+```
 
 ## Configuration
 

@@ -12,6 +12,7 @@
         buildInputs = with pkgs; [
           gcc
           gnumake
+          ncurses
         ];
       };
     };
